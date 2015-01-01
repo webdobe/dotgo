@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function dotgo_users_install() {
+  drupal_install_schema('dotgo_users');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function dotgo_users_uninstall() {
+  drupal_uninstall_schema('dotgo_users');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function dotgo_users_schema() {
+  $schema = array();
+  $schema['dotgo_users'] = array(
+    'description' => t('Stores per user settings'),
+    'fields' => array(
+      'uid' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'description' => t('Unique user id'),
+      ),
+      'sys_user' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'description' => t('Unique dotgo sys_user'),
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  return $schema;
+}
+
+?>

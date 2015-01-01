@@ -1,0 +1,8 @@
+name = Dotgo Messages API
+description = Enables Dotgo to broadcast messages for Dotgo Resellers.
+dependencies[] = dotgo_api
+dependencies[] = dotgo_reseller
+package = DOTGO
+core = 6.x
+
+

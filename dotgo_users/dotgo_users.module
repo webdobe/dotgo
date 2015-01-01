@@ -1,0 +1,381 @@
+<?php
+
+/**
+ * Implementation of hook_dotgo_engine
+ */
+function dotgo_users_dotgo_engine() {
+  $dg = _dotgo_designator();
+  $myEngines = array();
+  $myEngines[] = array(
+    'match' => 'user',
+    'engine_href' => 'dotgo_users',
+  );
+  $myEngines[] = array(
+    'match' => '*@',
+    'engine_href' => "dotgo_users_register",
+  );
+  return $myEngines;
+}
+
+/**
+ * Implementation of hook_menu
+ */
+function dotgo_users_menu() {
+  $items = array();
+
+  $items['user/%user/dotgo_user_auth'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'DOTGO Settings',
+    'page callback' => 'dotgo_users_display',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_dotgo_menu
+ */
+function dotgo_users_dotgo_menu($account = NULL) {
+  $dg = _dotgo_designator();
+  $menu = array();
+  if ($account->uid != 1) {
+    $menu[] = array(
+      'type' => 'user',
+      'name' => 'create_account',
+      'query' => $dg . ' user',
+      'text' => 'Create an account',
+      'perm' => 'dotgo basic access',
+    );
+  }
+  $menu[] = array(
+    'type' => 'user',
+    'name' => 'view_account',
+    'query' => $dg . ' user',
+    'text' => 'View my account',
+    'perm' => 'dotgo user access',
+  );
+  $menu[] = array(
+    'type' => 'user',
+    'name' => 'delete_account',
+    'query' => $dg . ' unregister',
+    'text' => 'Delete my account',
+    'perm' => 'dotgo user access',
+  );
+  $menu[] = array(
+    'type' => 'user',
+    'name' => 'change_username',
+    'query' => $dg . ' user username',
+    'text' => 'Change my username',
+    'perm' => 'change own username',
+  );
+  $menu[] = array(
+    'type' => 'user',
+    'name' => 'clear_session',
+    'query' => $dg . ' user clear',
+    'text' => 'Clear my session',
+    'perm' => 'dotgo administration access',
+  );
+  return $menu;
+}
+
+/**
+ * Implementation of hook_user
+ */
+function dotgo_users_user($op, &$edit, &$account, $category = NULL) {
+  // when a new user is created, generate a dotgo auth token for them
+  if ($account->uid) {
+    if ($op == 'insert') {
+      $token = _dotgo_users_token($account->uid);
+    }
+
+    // on load, get it out of the table
+    /*
+    if ($op == 'load') {
+        // if blank, no entry in the table - use the opportunity to generate one here
+        // if blank
+        $account->dotgo_users_token = _dotgo_users_token($account->uid);
+    }*/
+    if ($op == 'delete') {
+      dotgo_users_update($op = 'delete', $account->uid, NULL);
+    }
+  }
+}
+
+function dotgo_users($sys_argument) {
+
+  $dg = _dotgo_designator();
+  $sys_user = $_REQUEST['sys_user'];
+  $email_address = $_REQUEST['email_address'];
+  $account = dotgo_users_get(array('sys_user' => $sys_user));
+
+  if ($account && $sys_user) {
+    $msg = 'Hello ' . $account->name . '!';
+    $msg .= _dotgo_build_menu(array(), NULL, array('view_account'), $account);
+    $output = _dotgo_message($msg);
+  }
+  elseif ($sys_argument == 'clear') {
+    $msg = 'You have cleared your session.';
+    $msg .= _dotgo_build_menu(array(), NULL, array(), $account);
+    $output = _dotgo_set_session(array('email_address' => NULL), $msg);
+  }
+  elseif ($sys_argument == 'username') {
+    $question = 'Please reply with a new Username or reply ' . _dotgo_make_anchor_query($dg) . ' to cancel.';
+    $output = _dotgo_input_session('username', array(), $question, 'dotgo_users', $options);
+  }
+  else {
+    if ($email_address) {
+      $valid = valid_email_address($email_address);
+      if ($valid == TRUE) {
+        $sys_user = explode('@', $email_address);
+        $sys_user = $sys_user[0] . '@';
+        $duplicate = user_load(array('mail' => $email_address));
+        if (empty($duplicate)) {
+          $output = dotgo_users_follow_block('reg?', 'dotgo_anonymous', array('query' => array('register' => TRUE)), $dg . ' ' . $sys_user . ' register');
+        }
+        else {
+          $question = 'The e-mail address ' . $email_address . ' already exists.  Please reply with a different E-mail address or reply ' . _dotgo_make_anchor_query($dg) . ' to cancel.';
+          $output = _dotgo_input_session('email_address', array(), $question, 'dotgo_users', $options);
+        }
+      }
+      else {
+        $question = 'We are sorry, we need a REAL E-mail address.  Please reply with your E-mail address or reply ' . _dotgo_make_anchor_query($dg) . ' to cancel.';
+        $output = _dotgo_input_session('email_address', array(), $question, 'dotgo_users', $options);
+      }
+    }
+    else {
+      $question = 'Please reply with your E-mail address or reply ' . _dotgo_make_anchor_query($dg) . ' to cancel.';
+      $output = _dotgo_input_session('email_address', array(), $question, 'dotgo_users', $options);
+    }
+
+  }
+  return $output;
+}
+
+function dotgo_users_register($sys_argument) {
+
+  $directive = $_REQUEST['sys_directive'];
+  $sys_user = $_REQUEST['sys_user'];
+  $reg = $_GET['register'];
+
+  //GET Node ID
+  $keyword = strtoupper(_dotgo_designator());
+  $path = strtoupper($_REQUEST['sys_path']);
+
+  //If user has follow, unfollow, this will be broadcasted
+  //note register, unregister may also be used.
+  if ($reg) {
+    if ($directive == 'register') {
+      $email_address = $_REQUEST['email_address'];
+      if ($email_address) {
+        $account = user_load(array('mail' => $email_address));
+      }
+      else {
+        $username = explode('@', $sys_user);
+        $username = $username[0];
+        $account = user_load(array('name' => $username));
+      }
+      if ($account) {
+        //auth drupal user account with dotgo
+        $update = dotgo_users_update('update', $account->uid, $sys_user);
+      }
+      else {
+        //else create new drupal user account
+        $account = dotgo_users_add($sys_user, $email_address);
+      }
+      $msg = 'Welcome ' . $account->name . ', you have successfully created your user account!';
+      $msg .= _dotgo_build_menu(array(), NULL, array(), $account);
+      //MUST $output with _dotgo_message or will break;
+      $output = _dotgo_message($msg);
+    }
+    elseif ($directive == 'unregister') {
+      $account = dotgo_users_get(array('sys_user' => $sys_user));
+      //make sure we are not user 1 otherwise delete account
+      if ($account->uid != 1) {
+        $delete = user_delete(array(), $account->uid);
+        $update = dotgo_users_update('delete', $account->uid, $sys_user);
+        _user_mail_notify('status_deleted', $account);
+      }
+      $msg = 'We are sorry to see you go ' . $account->name . '! However, you have successfully removed your user account.';
+      $msg .= _dotgo_build_menu(array(), NULL, array());
+      //MUST $output with _dotgo_message or will break;
+      $output = _dotgo_message($msg);
+    }
+    else {
+      $msg = ' ';
+      $output = _dotgo_message($msg);
+    }
+    //else anonymous user is attempting to register for first time.
+  }
+  else {
+    $output = dotgo_users_register_block('reg', 'dotgo_users_register', array('query' => array('register' => TRUE)));
+  }
+
+  return $output;
+}
+
+
+//////////////////////////////////////////////////
+/////////////////  CALLBACKS   ///////////////////
+//////////////////////////////////////////////////
+// CALLBACK; displays dotgo user auth token
+function dotgo_users_display() {
+  $account = dotgo_users_get(arg(1));
+  $dg = _dotgo_designator();
+  $sys_user = $account->dotgo_sys_user;
+  $output = '<div id="dotgo_users_wrapper">';
+  if ($sys_user) {
+    $output .= 'A phone number has already been assigned to this account';
+  }
+  else {
+    $output .= _dotgo_follow_widget($query = array(
+      't' => t('Enter your phone number to follow ' . $account->name),
+      'channel' => _dotgo_tld_lookup(_dotgo_tld()),
+      'query' => $dg . ' ' . $account->name . '@ register'
+    ), $options = array());
+  }
+  $output .= '</div>';
+  return $output;
+}
+
+//////////////////////////////////////////////////
+////////////////  LOCAL HELPERS //////////////////
+//////////////////////////////////////////////////
+// HELPER; get the token for a user
+function _dotgo_users_token($uid) {
+  $token = db_result(db_query("SELECT token FROM {dotgo_users} WHERE uid = %d", $uid));
+  if (!$token) {
+    $token = user_password(6);
+    db_query("INSERT INTO {dotgo_users} (uid, token) VALUES (%d, '%s')", $uid, $token);
+  }
+  return $token;
+}
+
+// HELPER; output users follow block
+function dotgo_users_follow_block($reg, $href, $options, $text) {
+  $dom = new DOMDocument();
+  $block = _dotgo_make_block($dom);
+  $follow = _dotgo_make_follow($block, $reg);
+  $query = _dotgo_make_query($block, $text);
+  $engine = _dotgo_make_engine($follow, $href, $options);
+  return $dom->saveXML($block);
+}
+
+// HELPER; output users follow block
+function dotgo_users_register_block($reg, $href, $options) {
+  $dom = new DOMDocument();
+  $block = _dotgo_make_block($dom);
+  $register = _dotgo_make_register($block);
+  $engine = _dotgo_make_engine($register, $href, $options);
+  $forward = _dotgo_make_forward($block, $reg);
+  return $dom->saveXML($block);
+}
+
+// HELPER; adds drupal user
+function dotgo_users_add($sys_user, $email_address) {
+  $newUser = array(
+    'name' => $sys_user,
+    'pass' => user_password(), // note: do not md5 the password
+    'mail' => $email_address,
+    'status' => 1,
+    'init' => $email_address,
+  );
+
+  $account = user_save(NULL, $newUser);
+
+  dotgo_users_update('update', $account->uid, $sys_user);
+
+  $account->password = $newUser['pass'];
+  $mail = _user_mail_notify('register_no_approval_required', $account);
+  return $account;
+}
+
+// HELPER; gets user object from sys_user session variable
+function dotgo_users_get($info = array()) {
+  // Dynamically compose a SQL query:
+  $query = array();
+  $params = array();
+
+  if (is_numeric($info)) {
+    $info = array('uid' => $info);
+  }
+  elseif (!is_array($info)) {
+    return FALSE;
+  }
+
+  foreach ($info as $key => $value) {
+    if ($key == 'uid') {
+      $query[] = "$key = %d";
+      $params[] = $value;
+    }
+    else {
+      if ($key == 'token' || $key == 'sys_user') {
+        $query[] = "$key = '%s'";
+        $params[] = $value;
+      }
+      else {
+        $query[] = "LOWER($key) = LOWER('%s')";
+        $params[] = $value;
+      }
+    }
+  }
+
+  $result = db_query('SELECT * FROM {dotgo_users} u WHERE ' . implode(' AND ', $query), $params);
+
+  while ($row = db_fetch_object($result)) {
+    $sys_user = $row->sys_user;
+    $uid = $row->uid;
+  }
+
+  if (!$uid) {
+    $uid = $info;
+  }
+
+  $account = user_load($uid);
+
+  $account->dotgo_sys_user = $sys_user;
+
+  if ($uid) {
+    return $account;
+  }
+}
+
+// HELPER; updates user
+function dotgo_users_update($op = 'update', $uid, $sys_user) {
+  if ($op == 'delete') {
+    db_query('DELETE FROM {dotgo_users} WHERE uid = %d', $uid);
+  }
+  else {
+    $result = db_result(db_query("SELECT uid FROM {dotgo_users} user WHERE uid = %d", $uid));
+    $data = array(
+      'uid' => $uid,
+      'sys_user' => $sys_user,
+    );
+    if ($result) {
+      drupal_write_record('dotgo_users', $data, array('uid'));
+    }
+    else {
+      drupal_write_record('dotgo_users', $data);
+    }
+  }
+}
+
+function dotgo_users_profile_fields() {
+  $result = db_query("SELECT * FROM {profile_fields}");
+  while ($row = db_fetch_object($result)) {
+    $fields[$row->fid] = array(
+      'title' => $row->title,
+      'name' => $row->name,
+      'explanation' => $row->explanation,
+      'category' => $row->category,
+      'page' => $row->page,
+      'type' => $row->type,
+      'weight' => $row->weight,
+      'required' => $row->required,
+      'register' => $row->register,
+      'visibility' => $row->visibility,
+      'options' => $row->options,
+    );
+  }
+  return $fields;
+}

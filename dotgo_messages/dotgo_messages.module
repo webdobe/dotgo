@@ -1,0 +1,128 @@
+<?php
+//////////////////////////////////////////////////
+////////  DOTGO MESSAGE BROADCAST w/API   ////////
+//////////////////////////////////////////////////
+function dotgo_messages_broadcast($id = NULL, $type = NULL, $path, $message, $datetime = NULL) {
+
+  $tld = _dotgo_tld();
+  $channel = _dotgo_tld_lookup($tld);
+  $message = htmlspecialchars($message);
+
+  $query = array(
+    'method' => 'broadcastMessage',
+    'pathTo' => $path,
+    'channel' => $channel,
+    'node' => '<message><content>' . $message . '</content></message>',
+  );
+
+  if ($datetime != NULL) {
+    $query['sendTime'] = $datetime;
+  }
+
+  $xmlarray = _dotgo_api_call($query);
+
+  if ($xmlarray['result_attr']['success'] == 1) {
+    $message_id = $xmlarray['result']['message'];
+    dotgo_messages_update('update', $id, $type, $message_id, 1);
+  }
+
+  return $xmlarray;
+}
+
+//////////////////////////////////////////////////
+//////////  DOTGO MESSAGE SEND w/API   ///////////
+//////////////////////////////////////////////////
+function dotgo_messages_send($id = NULL, $type = NULL, $path, $message, $datetime = NULL) {
+
+  $tld = _dotgo_tld();
+  $channel = _dotgo_tld_lookup($tld);
+
+  $query = array(
+    'method' => 'sendMessage',
+    'pathTo' => $path,
+    'channel' => $channel,
+    'node' => '<message><content>' . $message . '</content></message>',
+  );
+
+  if ($datetime != NULL) {
+    $query['sendTime'] = $datetime;
+  }
+
+  $xmlarray = _dotgo_api_call($query);
+
+  if ($xmlarray['result_attr']['success'] == 1) {
+    $message_id = $xmlarray['result']['message'];
+    dotgo_messages_update('update', $id, $type, $message_id, 1);
+  }
+
+  return $xmlarray;
+}
+
+function _make_dotgo_messages_date($time) {
+
+  $type = DATE_DATETIME;
+  $date = date_make_date($time, 'UTC', $type);
+  $current = date_make_date('now', 'UTC', $type);
+
+  date_timezone_set($date, timezone_open('America/Denver'));
+  date_timezone_set($current, timezone_open('America/Denver'));
+
+  $message_date = date_format($date, DATE_FORMAT_DATETIME);
+
+  $current_date = date_format($current, DATE_FORMAT_DATETIME);
+
+  if (strtotime($message_date) < strtotime($current_date)) {
+    $message_date = $current_date;
+  }
+
+  return strtotime($message_date) + 30;
+
+}
+
+//////////////////////////////////////////////////
+/////////  DOTGO MESSAGE CANCEL w/API   //////////
+//////////////////////////////////////////////////
+function dotgo_messages_cancel($id = NULL, $type = NULL, $message_id) {
+
+  $query = array(
+    'method' => 'cancelMessage',
+    'message' => $message_id,
+  );
+
+  $xmlarray = _dotgo_api_call($query);
+
+  if ($xmlarray['result_attr']['success'] == 1) {
+    dotgo_messages_update('cancel', $id, $type, $message_id);
+  }
+
+}
+
+function dotgo_messages_update($op = 'update', $id = NULL, $type = NULL, $message_id = NULL, $success = 1) {
+  if ($op == 'update') {
+    $result = db_query("SELECT message_id FROM {dotgo_messages} WHERE id = %d AND type = '%s' AND message_id = '%s'", $id, $type, $message_id);
+
+    if (db_result($result) == FALSE) {
+      db_query("INSERT INTO {dotgo_messages} (id, type, message_id, success) VALUES ('%d', '%s', '%s', '%d')", $id, $type, $message_id, $success);
+    }
+  }
+  elseif ($op == 'cancel') {
+    if ($id && $type) {
+      db_query("DELETE FROM {dotgo_messages} WHERE id = %d AND type = '%s' AND message_id = '%s'", $id, $type, $message_id);
+    }
+    else {
+      db_query("DELETE FROM {dotgo_messages} WHERE message_id = '%s'", $message_id);
+    }
+    drupal_set_message(t('The message has been canceled'));
+  }
+
+}
+
+function dotgo_messages_message_id($id, $type) {
+  $result = db_result(db_query("SELECT message_id FROM {dotgo_messages} WHERE id = '%d' AND type = '%s'", $id, $type));
+  if ($result) {
+    return $result;
+  }
+  else {
+    drupal_set_message(t('There was no message_id'));
+  }
+}

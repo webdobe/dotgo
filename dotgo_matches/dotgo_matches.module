@@ -1,0 +1,98 @@
+<?php
+/**
+ * @file
+ * Code for the DOTGO Matches feature.
+ */
+
+include_once 'dotgo_matches.features.inc';
+include_once 'includes/dotgo_matches.util.inc';
+include_once 'includes/dotgo_matches.cache.inc';
+
+/**
+ * Implements hook_views_api().
+ */
+function dotgo_matches_views_api() {
+  return array(
+    'api' => '2.0',
+    'path' => drupal_get_path('module', 'dotgo_matches') . '/views',
+  );
+}
+
+/**
+ * Implementation of hook_dotgo_engine.
+ */
+function dotgo_matches_dotgo_engine() {
+  $myEngines = array();
+  $myEngines[] = array(
+    'match' => 'matches',
+    'engine_href' => 'matches',
+  );
+  return $myEngines;
+}
+
+/**
+ * Callback for the dotgo_matches engine.
+ */
+function dotgo_matches($sys_argument) {
+  $dg = _dotgo_designator();
+  $return = '';
+  $params = drupal_get_query_parameters();
+
+  // The match tree nid should be passed.
+  if(is_numeric(arg(2))){
+    $node = node_load(arg(2));
+    $type = $node->field_dotgo_match_type[$node->language][0]['value'];
+    $pattern = empty($node->field_dotgo_match_pattern) ? '' : $node->field_dotgo_match_pattern[$node->language][0]['value'];
+  }
+
+  $user = NULL;
+  // Grab the $user object with sys_user DOTGO system variable
+  if(isset($params['sys_user'])){
+    //$user = dotgo_users_get(array('sys_user' => $params['sys_user']));
+  }
+
+  if(!node_access('view', $node, $user)){
+    return _dotgo_message('You are unauthorized to view match.');
+  }
+
+  if(!isset($params['match_state_cache'])){
+    $params['match_state_cache'] = user_password($length = 10);
+  }
+
+  $options = array();
+  $match_state = array();
+  // We have a cached match state.
+  $cid = dotgo_matches_get_cache_id(DOTGO_CACHE_MATCH_STATE, $params['sys_user'], FALSE, array($params['match_state_cache']));
+
+  if(dotgo_matches_get_cache(DOTGO_CACHE_MATCH_STATE, $cid, $return)){
+    return $return;
+  } else {
+    switch ($type) {
+      case "engine":
+        $engine = $node->field_dotgo_match_engine[$node->language][0]['url'];
+        if(empty($pattern)){
+          $make_engine[$id] = _dotgo_make_engine($make_match[$id], $engine);
+        } else {
+          $sub_match[$id] = _dotgo_make_match($make_match[$id], '');
+          $make_engine[$id] = _dotgo_make_engine($sub_match[$id], $engine);
+        }
+        break;
+      case "default":
+        $message = empty($node->field_dotgo_match_message) ? NULL : $node->field_dotgo_match_message[$node->language][0]['value'];
+        $children = dotgo_matches_get_by_parent($node->nid);
+        if(!empty($children)){
+          foreach($children as $child){
+            $child = node_load($child);
+            $query = $dg . ' ' . variable_get('dotgo_matches_match', 'matches') . ' ' . $child->nid;
+            $message .= _dotgo_make_anchor_query($query) . $child->title . '<br />';
+          }
+        }
+        $return = _dotgo_message($message);
+        break;
+    }
+  }
+
+  dotgo_matches_set_cache(DOTGO_CACHE_MATCH_STATE, $cid, $return);
+
+  return $return;
+}

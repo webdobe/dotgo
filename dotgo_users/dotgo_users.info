@@ -1,0 +1,7 @@
+name = Dotgo Users Engine
+description = Enables Dotgo Users Engine
+dependencies[] = dotgo_api
+package = DOTGO
+core = 7.x
+
+

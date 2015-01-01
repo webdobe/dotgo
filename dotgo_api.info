@@ -1,0 +1,6 @@
+name = DOTGO API
+description = Enables DOTGO API on website.
+package = DOTGO
+core = 7.x
+
+

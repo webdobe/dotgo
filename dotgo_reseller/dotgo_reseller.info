@@ -1,0 +1,7 @@
+name = Dotgo Resellers API
+description = Enables Dotgo API on website for Dotgo Resellers.
+dependencies[] = dotgo_api
+package = DOTGO
+core = 6.x
+
+

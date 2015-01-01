@@ -1,0 +1,164 @@
+<?php
+
+//////////////////////////////////////////////////
+/////////////////  HOOKS   ///////////////////////
+//////////////////////////////////////////////////
+/**
+ * Implementation of hook_dotgo_engine
+ */
+function dotgo_anonymous_dotgo_engine() {
+  $myEngines = array();
+  /*$myEngines[] = array(
+      'match' => 'anon*@',
+      'engine_href' => "dotgo_anonymous",
+  );*/
+  $myEngines[] = array(
+    'match' => '*@',
+    'engine_href' => "dotgo_generic",
+  );
+  return $myEngines;
+}
+
+/**
+ * Implementation of hook_dotgo_menu
+ */
+function dotgo_anonymous_dotgo_menu() {
+  $dg = _dotgo_designator();
+  $menu = array();
+
+  return $menu;
+}
+
+//////////////////////////////////////////////////
+/////////////////  ENGINES   /////////////////////
+//////////////////////////////////////////////////
+
+
+function dotgo_anonymous($sys_argument) {
+
+  $directive = $_REQUEST['sys_directive'];
+  $sys_user = $_REQUEST['sys_user'];
+  $reg = $_GET['register'];
+
+  //GET Node ID
+  $keyword = strtoupper(_dotgo_designator());
+  $path = strtoupper($_REQUEST['sys_path']);
+
+  //If user has follow, unfollow, this will be broadcasted
+  //note register, unregister may also be used.
+  if ($reg) {
+    if ($directive == 'follow') {
+      $account = dotgo_users_get(array('token' => $sys_argument));
+      if ($account) {
+        //auth drupal user account with dotgo
+        $update = dotgo_users_update('update', $account->uid, $sys_user);
+      }
+      else {
+        //else create new drupal user account
+        $email_address = $_REQUEST['email_address'];
+        $account = dotgo_users_add($sys_user, $email_address);
+        //$add = dotgo_users_update('add', $account->uid, $sys_user);
+      }
+      $msg = 'Welcome ' . $account->name . ', you have successfully created your user account!';
+      $msg .= _dotgo_build_menu(array(), NULL, array(), $account);
+      //MUST $output with _dotgo_message or will break;
+      $output = _dotgo_message($msg);
+    }
+    elseif ($directive == 'unregister' || $directive == 'unfollow') {
+      $account = dotgo_users_get(array('sys_user' => $sys_user));
+      //make sure we are not user 1 otherwise delete account
+      if ($account->uid == 1) {
+        $update = dotgo_users_update('update', $account->uid, NULL);
+      }
+      else {
+        $delete = user_delete(array(), $account->uid);
+        $update = dotgo_users_update('delete', $account->uid, $sys_user);
+        _user_mail_notify('status_deleted', $account);
+      }
+      $msg = 'We are sorry to see you go ' . $account->name . '! However, you have successfully removed your user account.';
+      $msg .= _dotgo_build_menu(array(), NULL, array());
+      //MUST $output with _dotgo_message or will break;
+      $output = _dotgo_message($msg);
+    }
+    else {
+      $msg = ' ';
+      $output = _dotgo_message($msg);
+    }
+    //else anonymous user is attempting to register for first time.
+  }
+  else {
+    $output = dotgo_anonymous_register('reg', 'dotgo_anonymous', array('query' => array('register' => TRUE)));
+  }
+  return $output;
+}
+
+function dotgo_generic($sys_argument) {
+
+  $directive = $_REQUEST['sys_directive'];
+  $sys_user = $_REQUEST['sys_user'];
+  $reg = $_GET['register'];
+
+  //GET Node ID
+  $keyword = strtoupper(_dotgo_designator());
+  $path = strtoupper($_REQUEST['sys_path']);
+
+  //If user has follow, unfollow, this will be broadcasted
+  //note register, unregister may also be used.
+  if ($reg) {
+    if ($directive == 'register') {
+      $email_address = $_REQUEST['email_address'];
+      if ($email_address) {
+        $account = user_load(array('mail' => $email_address));
+      }
+      else {
+        $username = explode('@', $sys_user);
+        $username = $username[0];
+        $account = user_load(array('name' => $username));
+      }
+      if ($account) {
+        //auth drupal user account with dotgo
+        $update = dotgo_users_update('update', $account->uid, $sys_user);
+      }
+      else {
+        //else create new drupal user account
+        $account = dotgo_users_add($sys_user, $email_address);
+      }
+      $msg = 'Welcome ' . $account->name . ', you have successfully created your user account!';
+      $msg .= _dotgo_build_menu(array(), NULL, array(), $account);
+      //MUST $output with _dotgo_message or will break;
+      $output = _dotgo_message($msg);
+    }
+    elseif ($directive == 'unregister') {
+      $account = dotgo_users_get(array('sys_user' => $sys_user));
+      //make sure we are not user 1 otherwise delete account
+      if ($account->uid != 1) {
+        $delete = user_delete(array(), $account->uid);
+        $update = dotgo_users_update('delete', $account->uid, $sys_user);
+        _user_mail_notify('status_deleted', $account);
+      }
+      $msg = 'We are sorry to see you go ' . $account->name . '! However, you have successfully removed your user account.';
+      $msg .= _dotgo_build_menu(array(), NULL, array());
+      //MUST $output with _dotgo_message or will break;
+      $output = _dotgo_message($msg);
+    }
+    else {
+      $msg = ' ';
+      $output = _dotgo_message($msg);
+    }
+    //else anonymous user is attempting to register for first time.
+  }
+  else {
+    $output = dotgo_anonymous_register('reg', 'dotgo_generic', array('query' => array('register' => TRUE)));
+  }
+
+  return $output;
+}
+
+function dotgo_anonymous_register($reg, $href, $options) {
+  $dom = new DOMDocument();
+  $block = _dotgo_make_block($dom);
+  $register = _dotgo_make_register($block);
+  $engine = _dotgo_make_engine($register, $href, $options);
+  $forward = _dotgo_make_forward($block, $reg);
+  return $dom->saveXML($block);
+}

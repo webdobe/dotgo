@@ -1,0 +1,156 @@
+<?php
+/**
+ * @file
+ * Code for the DOTGO API module.
+ */
+
+
+include_once 'includes/dotgo_api.util.inc';
+include_once 'includes/dotgo_api.error.inc';
+
+/**
+ * Define the XMLNS for DOTGO CMRL
+ */
+define('DOTGO_XMLNS', 'http://dotgo.com/cmrl/1.0');
+
+/**
+ * Implementation of hook_menu
+ */
+function dotgo_api_menu() {
+  $items = array();
+  $items['index.cmrl'] = array(
+    'title' => 'index.cmrl',
+    'page callback' => 'dotgo_api_index_cmrl',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['dotgo'] = array(
+    'title' => 'DOTGO',
+    'page callback' => 'dotgo_api_page_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/services/dotgo'] = array(
+    'title' => 'Dotgo',
+    'description' => "Manage Dotgo Configuration",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('dotgo_api_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'dotgo_api.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/config/services/dotgo/settings'] = array(
+    'title' => 'Dotgo Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('dotgo_api_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'dotgo_api.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm
+ */
+function dotgo_api_perm() {
+  return array(
+    'dotgo basic access',
+    'dotgo user access',
+    'dotgo administration access',
+  );
+}
+
+/**
+ * Implements index.cmrl menu callback.
+ */
+function dotgo_api_index_cmrl() {
+
+  //check address to make sure it is either dotgo or a privileged user, after all sensitive info may be accessed anonymously otherwise.
+  $visitor = $_SERVER['REMOTE_ADDR'];
+  if (preg_match("/174.129.234.11/", $visitor) ||
+    preg_match("/" . variable_get('dotgo_admin_ip', '127.0.0.1') . "/", $visitor) ||
+    variable_get('dotgo_debug', 0)
+  ) {
+
+    // header info
+    header('Content-Type: text/xml');
+
+    $xml = new DOMDocument();
+    $cmrl = $xml->createElement('cmrl');
+    $cmrl = $xml->appendChild($cmrl);
+    $cmrl->setAttribute('account', variable_get('dotgo_account', 'dotgo_account'));
+
+    dotgo_api_render_engines($cmrl);
+
+    print $xml->saveXML();
+  }
+
+}
+
+/**
+ * Implements engine menu callback.
+ */
+function dotgo_api_page_callback() {
+  // callback to generic dotgo/%, display help text if no argument
+  // otherwise, look for a function with same name as arg(1); error if not found
+  //check address to make sure it is either dotgo or a privileged user, after all sensitive info may be accessed anonymously otherwise.
+  $visitor = $_SERVER['REMOTE_ADDR'];
+  if (preg_match("/" . variable_get('dotgo_server_ip', '127.0.0.1') . "/", $visitor) ||
+    preg_match("/" . variable_get('dotgo_admin_ip', '127.0.0.1') . "/", $visitor) ||
+    variable_get('dotgo_debug', 0)
+  ) {
+
+    // did not give us an argument
+    $function = 'dotgo_'.arg(1);
+    if ($function == '') {
+      return t('This page is not meant to be called directly.');
+    }
+    else {
+      if (function_exists($function)) {
+        $arg = trim($_REQUEST['sys_argument']);
+        print $function($arg);
+      }
+      else {
+        print _dotgo_message(t('The server you have contacted is not correctly configured.  Contact the site administrator.'));
+      }
+    }
+  }
+}
+
+/**
+ * Implements dotgo_api_render_engines.
+ */
+function dotgo_api_render_engines(&$cmrl){
+  $engines = module_invoke_all('dotgo_engine');
+  ksort($engines);
+  foreach ($engines as $e) {
+    if(isset($e['match'])){
+      if (!empty($e['children'])) {
+        $match = _dotgo_make_match($cmrl, $e['match']);
+        $default = _dotgo_make_match($match, '');
+        $engine = _dotgo_make_engine($default, $e['engine_href']);
+        ksort($e['children']);
+        foreach ($e['children'] as $child) {
+          $childmatch = _dotgo_make_match($match, $child['match']);
+          //checks if this is a follow engine
+          if ($child['follow'] && $child['follow_allow']) {
+            $block = _dotgo_make_block($childmatch);
+            $follow = _dotgo_make_follow($block, $child['follow_allow']);
+            $follow = _dotgo_make_engine($follow, $child['engine_href'], array('query' => array('register' => TRUE)));
+            $query = _dotgo_make_query($block, $child['follow']);
+          }
+          else {
+            $engine = _dotgo_make_engine($childmatch, $child['engine_href']);
+          }
+        }
+      }
+      else {
+        $match = _dotgo_make_match($cmrl, $e['match']);
+        $engine = _dotgo_make_engine($match, $e['engine_href']);
+      }
+    }
+  }
+}
+

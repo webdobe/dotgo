@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function dotgo_install() {
+  $t = get_t();
+
+  // machine name of the content type
+  $name = 'match';
+
+  // define the node type
+  $match = array(
+    'type' => $name,
+    'name' => $t('Match'),
+    'base' => 'node_content',
+    'title_label' => $t('Pattern'),
+    'description' => $t('A match specifies a pattern against which the query is compared to determine how the query is to be routed or resolved.'),
+    'custom' => TRUE,
+  );
+
+  // set other node defaults not declared above
+  $content_type = node_type_set_defaults($match);
+
+  // save the content type
+  node_type_save($content_type);
+  /*
+    // create all the fields we are adding to our content type
+    foreach (_dotgo_installed_fields() as $field) {
+      field_create_field($field);
+    }
+
+    // create all the instances for our fields
+    foreach (_dotgo_match_installed_instances() as $instance) {
+      $instance['entity_type'] = 'node';
+      $instance['bundle'] = $match['type'];
+      field_create_instance($instance);
+    }
+  */
+
+}

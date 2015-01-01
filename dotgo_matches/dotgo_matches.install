@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function dotgo_matches_schema() {
+  $schema = array();
+  $schema['cache_matches'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}

@@ -1,0 +1,8 @@
+name = Dotgo Anonymous Engine
+description = Enables Dotgo Anonymous Engine
+dependencies[] = dotgo_api
+dependencies[] = dotgo_users
+package = DOTGO
+core = 7.x
+
+

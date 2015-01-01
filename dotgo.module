@@ -1,0 +1,77 @@
+<?php
+/**
+ * @file
+ * Code for the DOTGO module.
+ */
+
+/**
+ * Name of default DOTGO Match content type.
+ */
+define('DOTGO_MATCH_TYPE', 'dotgo_match');
+
+/**
+ * Implements hook_views_api().
+ */
+function dotgo_views_api() {
+  return array(
+    'api' => '2.0',
+    'path' => drupal_get_path('module', 'dotgo') . '/views',
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+
+function dotgo_theme($existing, $type, $theme, $path) {
+  $theme = array();
+  return $theme;
+}
+
+
+/**
+ * Implements hook_filter_info().
+ */
+function dotgo_filter_info() {
+  $filters = array();
+  $filters['dotgo'] = array(
+    'title' => t('DOTGO'),
+    'description' => t('DOTGO Filters'),
+    //'prepare callback' => '_dotgo_filter_prepare',
+    'process callback' => '_dotgo_filter_process',
+    //'tips callback' => '_dotgo_filter_tips',
+  );
+  return $filters;
+}
+
+/**
+ * Implements filter prepare callback.
+ */
+function _dotgo_filter_prepare() {
+
+}
+
+/**
+ * Implements filter process callback.
+ */
+function _dotgo_filter_process($text) {
+  $filtered = _filter_autop($text);
+
+  $filtered = preg_replace("/<p[^>]*?>/", "", $filtered);
+  $filtered = str_replace("</p>", "<br />", $filtered);
+  $filtered = preg_replace('/<br\s*?\/?>\s*$/', '', $filtered);
+
+  $filter = new stdClass();
+  $filter->settings['allowed_html'] = '<a> <br /> <url> <block> <query> <follow>';
+  $filter->settings['filter_html_nofollow'] = 0;
+  $filtered = _filter_html($filtered, $filter);
+
+  return $filtered;
+}
+
+/**
+ * Implements filter tips callback.
+ */
+function _dotgo_filter_tips() {
+}
+

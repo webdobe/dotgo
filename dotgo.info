@@ -1,0 +1,12 @@
+name = DOTGO
+description = Allows administrators to customize the sites DOTGO navigation.
+package = DOTGO
+version = VERSION
+core = 7.x
+configure = admin/structure/dotgo
+
+dependencies[] = ctools
+dependencies[] = entity
+dependencies[] = entityreference
+dependencies[] = views
+dependencies[] = dotgo_api

@@ -1,0 +1,54 @@
+<?php
+/**
+ * Implementation of hook_install().
+ */
+function dotgo_messages_install() {
+  drupal_install_schema('dotgo_messages');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function dotgo_messages_uninstall() {
+  drupal_uninstall_schema('dotgo_messages');
+}
+
+
+/**
+ * Implementation of hook_schema().
+ */
+function dotgo_messages_schema() {
+  $schema = array();
+  $schema['dotgo_messages'] = array(
+    'description' => t('Stores Dotgo Text Message Data.'),
+    'fields' => array(
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'description' => t('ID'),
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'description' => t('Type of Message'),
+      ),
+      'message_id' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'description' => t('Message Reference ID'),
+      ),
+      'success' => array(
+        'description' => t('Delivery success of message'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id', 'type', 'message_id'),
+  );
+  return $schema;
+}
