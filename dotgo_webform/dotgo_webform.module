@@ -1,0 +1,44 @@
+<?php
+/**
+ * @file
+ * Drupal needs this blank file.
+ */
+
+include_once 'includes/dotgo_webform.field.inc';
+
+
+
+
+/**
+ * Helper to get match form components.
+ *
+ * @param $entity
+ * @return $components
+ */
+function dotgo_webform_get_match_components($entity){
+  $elements = array();
+
+  if(!isset($entity->match)){
+    $entity->match = dotgo_matches_load_match($entity);
+  }
+
+  $elements = $entity->match->webform['components'];
+
+  return $elements;
+}
+
+function dotgo_webform_get_match_form_component($entity){
+  $element = array();
+  $components = dotgo_webform_get_match_components($entity);
+
+  $key = empty($entity->field_dotgo_match_set_id) ? NULL : $entity->field_dotgo_match_set_id[$entity->language][0]['value'];
+  if($key){
+    foreach($components as $cid => $component){
+      if($component['form_key'] == $key){
+        $element = $component;
+      }
+    }
+  }
+
+  return $element;
+}

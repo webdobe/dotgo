@@ -1,0 +1,20 @@
+/**
+ * @file
+ * Styling for the display of dotgo webform.
+ */
+
+.dotgo-webform .dotgo-webform-item {
+  width: 33%;
+  display: inline-block;
+  vertical-align: top;
+  padding-right: 3%;
+}
+
+.dotgo-webform .form-item label {
+  display: block;
+}
+
+.dotgo-webform .form-item .form-control {
+  display: block;
+  width: 100%;
+}

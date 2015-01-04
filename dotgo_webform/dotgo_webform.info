@@ -1,0 +1,10 @@
+name = Dotgo Webform
+description = Provides matches the ability to collect data in webform.
+core = 7.x
+package = DOTGO
+version = 7.x-1.0-beta1
+project = dotgo_webform
+dependencies[] = defaultconfig
+features[defaultconfig][] = strongarm:webform_node_dotgo_match
+features[features_api][] = api:2
+features_exclude[dependencies][defaultconfig] = defaultconfig
