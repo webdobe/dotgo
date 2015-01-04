@@ -99,7 +99,7 @@ function dotgo_api_page_callback() {
   $visitor = $_SERVER['REMOTE_ADDR'];
   if (preg_match("/" . variable_get('dotgo_server_ip', '127.0.0.1') . "/", $visitor) ||
     preg_match("/" . variable_get('dotgo_admin_ip', '127.0.0.1') . "/", $visitor) ||
-    variable_get('dotgo_debug', 0)
+    variable_get('dotgo_debug', 1)
   ) {
 
     // did not give us an argument

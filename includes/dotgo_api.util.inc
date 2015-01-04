@@ -282,6 +282,37 @@ function _dotgo_tld_lookup($key) {
 }
 
 /**
+ * Implements _dotgo_get_parameters.
+ */
+function _dotgo_get_parameters($query = TRUE, $sys = TRUE, $session = FALSE){
+  if($query){
+    $parameters = drupal_get_query_parameters();
+  }
+  if($sys){
+    $sys_parameters = array(
+      'sys_channel',
+      'sys_query',
+      'sys_designator',
+      'sys_path',
+      'sys_argument',
+      'sys_location',
+      'sys_corrected_path',
+      'sys_num_corrected_path',
+      'sys_corrected_argument',
+      'sys_num_corrected_argument_known',
+      'sys_num_corrected_argument_unknown',
+      'sys_num_corrected_argument'
+    );
+    foreach($sys_parameters as $parameter) {
+      if(isset($_REQUEST[$parameter])){
+        $parameters[$parameter] = $_REQUEST[$parameter];
+      }
+    }
+  }
+  return $parameters;
+}
+
+/**
  * Impliments _dotgo_build_menu.
  *
  * @param array $menus

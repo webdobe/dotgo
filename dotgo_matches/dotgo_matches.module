@@ -6,15 +6,33 @@
 
 include_once 'dotgo_matches.features.inc';
 include_once 'includes/dotgo_matches.util.inc';
+include_once 'includes/dotgo_matches.form.inc';
 include_once 'includes/dotgo_matches.cache.inc';
 
 /**
- * Implements hook_views_api().
+ * Implements hook_menu().
  */
-function dotgo_matches_views_api() {
+function dotgo_matches_menu() {
+  $items = array();
+  $items['admin/structure/dotgo/settings'] = array(
+    'title' => 'Match settings',
+    'description' => 'Configure settings for the Matches',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('dotgo_matches_apps_configure_form'),
+    'access arguments' => array('administer dotgo_matches'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function dotgo_matches_permission() {
   return array(
-    'api' => '2.0',
-    'path' => drupal_get_path('module', 'dotgo_matches') . '/views',
+    'administer dotgo_matches' => array(
+      'title' => t('Administer DOTGO Matches'),
+      'description' => t('Configure settings for DOTGO Matches'),
+    ),
   );
 }
 
@@ -34,21 +52,36 @@ function dotgo_matches_dotgo_engine() {
  * Callback for the dotgo_matches engine.
  */
 function dotgo_matches($sys_argument) {
+  global $user;
   $dg = _dotgo_designator();
   $return = '';
-  $params = drupal_get_query_parameters();
+  $params = _dotgo_get_parameters();
+  $new_user = TRUE;
+  $session_variables = array();
 
   // The match tree nid should be passed.
   if(is_numeric(arg(2))){
     $node = node_load(arg(2));
-    $type = $node->field_dotgo_match_type[$node->language][0]['value'];
-    $pattern = empty($node->field_dotgo_match_pattern) ? '' : $node->field_dotgo_match_pattern[$node->language][0]['value'];
+  } elseif (isset($sys_argument) && is_numeric($sys_argument)) {
+    $node = node_load($sys_argument);
   }
 
-  $user = NULL;
+  if(is_object($node) && isset($node->nid)){
+    $node->match = dotgo_matches_load_match($node);
+  }
+
+  // Check if the node is a match
+  if(is_object($node) && $node->type == DOTGO_MATCH_TYPE){
+    $type = $node->field_dotgo_match_type[$node->language][0]['value'];
+  }
+
   // Grab the $user object with sys_user DOTGO system variable
-  if(isset($params['sys_user'])){
+  if(!isset($params['sys_user'])){
+    $params['sys_user'] = 'user-'.user_password(8);
+    $session_variables['sys_user'] = $params['sys_user'];
     //$user = dotgo_users_get(array('sys_user' => $params['sys_user']));
+  } else {
+    $new_user = FALSE;
   }
 
   if(!node_access('view', $node, $user)){
@@ -61,6 +94,7 @@ function dotgo_matches($sys_argument) {
 
   $options = array();
   $match_state = array();
+
   // We have a cached match state.
   $cid = dotgo_matches_get_cache_id(DOTGO_CACHE_MATCH_STATE, $params['sys_user'], FALSE, array($params['match_state_cache']));
 
@@ -68,14 +102,23 @@ function dotgo_matches($sys_argument) {
     return $return;
   } else {
     switch ($type) {
-      case "engine":
-        $engine = $node->field_dotgo_match_engine[$node->language][0]['url'];
-        if(empty($pattern)){
-          $make_engine[$id] = _dotgo_make_engine($make_match[$id], $engine);
+      case "form":
+        $input_id = empty($node->field_dotgo_match_webform) ? NULL : $node->field_dotgo_match_webform[$node->language][0]['form_key'];
+        if(isset($_REQUEST[$input_id])){
+          $next_match = dotgo_matches_determin_next_match($node, $params);
+          $options = array();
+          $engine = 'matches/'.$next_match->nid;
+          $return = _dotgo_engine_session($engine, $options);
         } else {
-          $sub_match[$id] = _dotgo_make_match($make_match[$id], '');
-          $make_engine[$id] = _dotgo_make_engine($sub_match[$id], $engine);
+          $message = dotgo_matches_render_match_form_message($node);
+          $href = 'matches/'.$node->nid;
+          $return = _dotgo_input_session($input_id, $session_variables, $message, $href, $options);
         }
+        break;
+      case "engine":
+        $options = array();
+        $engine = $node->field_dotgo_match_engine[$node->language][0]['url'];
+        $return = _dotgo_engine_session($engine, $options);
         break;
       case "default":
         $message = empty($node->field_dotgo_match_message) ? NULL : $node->field_dotgo_match_message[$node->language][0]['value'];
@@ -95,4 +138,51 @@ function dotgo_matches($sys_argument) {
   dotgo_matches_set_cache(DOTGO_CACHE_MATCH_STATE, $cid, $return);
 
   return $return;
+}
+
+/**
+ * Implementation of hook_entity_presave().
+ */
+function dotgo_matches_entity_presave($entity, $type) {
+  if ($type == 'node' && $entity->type == 'dotgo_match') {
+    $parent = NULL;
+    if (isset($entity->field_dotgo_match_parent[$entity->language][0]['target_id'])) {
+      $parent = $entity->field_dotgo_match_parent[$entity->language][0]['target_id'];
+    }
+
+    $match = NULL;
+    if (isset($entity->field_dotgo_match[$entity->language][0]['target_id'])) {
+      $match = $entity->field_dotgo_match[$entity->language][0]['target_id'];
+    }
+
+    if ($parent) {
+      if (!$match) {
+        $match = dotgo_matches_get_match($parent);
+        $entity->field_dotgo_match[$entity->language][0]['target_id'] = $match;
+      }
+      if($match == $entity->nid) {
+        unset($entity->field_dotgo_match_parent[$entity->language]);
+      }
+    } else {
+      unset($entity->field_dotgo_match[$entity->language]);
+      unset($entity->field_dotgo_match_parent[$entity->language]);
+    }
+
+    //make sure we always have a match.
+    if (!isset($entity->field_dotgo_match[$entity->language][0]['target_id']) && isset($entity->nid)) {
+      $entity->field_dotgo_match[$entity->language][0]['target_id'] = $entity->nid;
+    }
+  }
+}
+
+/**
+ * Allowed values callback for 'Priority', 'Status' and 'Type'.
+ */
+function dotgo_matches_allowed_values_callback($field, $instance, $entity_type, $entity, &$cachable) {
+  if (strpos($field['field_name'], 'field_dotgo_match_') === 0) {
+    $field_name = substr($field['field_name'], 18);
+    $allowed_values = variable_get_value("dotgo_matches_allowed_values_{$field_name}");
+    return $allowed_values['options'];
+  }
+  return array('_none' => t('- None -'));
 }

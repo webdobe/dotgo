@@ -10,16 +10,6 @@
 define('DOTGO_MATCH_TYPE', 'dotgo_match');
 
 /**
- * Implements hook_views_api().
- */
-function dotgo_views_api() {
-  return array(
-    'api' => '2.0',
-    'path' => drupal_get_path('module', 'dotgo') . '/views',
-  );
-}
-
-/**
  * Implements hook_theme().
  */
 

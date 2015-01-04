@@ -10,6 +10,49 @@
 function dotgo_matches_field_default_field_bases() {
   $field_bases = array();
 
+  // Exported field_base: 'field_dotgo_match'
+  $field_bases['field_dotgo_match'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_dotgo_match',
+    'foreign keys' => array(
+      'node' => array(
+        'columns' => array(
+          'target_id' => 'nid',
+        ),
+        'table' => 'node',
+      ),
+    ),
+    'indexes' => array(
+      'target_id' => array(
+        0 => 'target_id',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'entityreference',
+    'settings' => array(
+      'handler' => 'base',
+      'handler_settings' => array(
+        'behaviors' => array(
+          'views-select-list' => array(
+            'status' => 0,
+          ),
+        ),
+        'sort' => array(
+          'type' => 'none',
+        ),
+        'target_bundles' => array(
+          'dotgo_match' => 'dotgo_match',
+        ),
+      ),
+      'target_type' => 'node',
+    ),
+    'translatable' => 0,
+    'type' => 'entityreference',
+  );
+
   // Exported field_base: 'field_dotgo_match_children'
   $field_bases['field_dotgo_match_children'] = array(
     'active' => 1,
@@ -182,6 +225,94 @@ function dotgo_matches_field_default_field_bases() {
     'type' => 'text',
   );
 
+  // Exported field_base: 'field_dotgo_match_set_id'
+  $field_bases['field_dotgo_match_set_id'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_dotgo_match_set_id',
+    'foreign keys' => array(
+      'format' => array(
+        'columns' => array(
+          'format' => 'format',
+        ),
+        'table' => 'filter_format',
+      ),
+    ),
+    'indexes' => array(
+      'format' => array(
+        0 => 'format',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'text',
+    'settings' => array(
+      'max_length' => 255,
+    ),
+    'translatable' => 0,
+    'type' => 'text',
+  );
+
+  // Exported field_base: 'field_dotgo_match_set_name'
+  $field_bases['field_dotgo_match_set_name'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_dotgo_match_set_name',
+    'foreign keys' => array(
+      'format' => array(
+        'columns' => array(
+          'format' => 'format',
+        ),
+        'table' => 'filter_format',
+      ),
+    ),
+    'indexes' => array(
+      'format' => array(
+        0 => 'format',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'text',
+    'settings' => array(
+      'max_length' => 255,
+    ),
+    'translatable' => 0,
+    'type' => 'text',
+  );
+
+  // Exported field_base: 'field_dotgo_match_set_type'
+  $field_bases['field_dotgo_match_set_type'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_dotgo_match_set_type',
+    'foreign keys' => array(),
+    'indexes' => array(
+      'value' => array(
+        0 => 'value',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'list',
+    'settings' => array(
+      'allowed_values' => array(
+        'date' => 'Date',
+        'email' => 'Email',
+        'number' => 'Number',
+        'select' => 'Select',
+        'textfield' => 'Textfield',
+        'time' => 'Time',
+      ),
+      'allowed_values_function' => 'dotgo_matches_allowed_values_callback',
+    ),
+    'translatable' => 0,
+    'type' => 'list_text',
+  );
+
   // Exported field_base: 'field_dotgo_match_type'
   $field_bases['field_dotgo_match_type'] = array(
     'active' => 1,
@@ -201,8 +332,9 @@ function dotgo_matches_field_default_field_bases() {
       'allowed_values' => array(
         'default' => 'Default',
         'engine' => 'Engine',
+        'form' => 'Form',
       ),
-      'allowed_values_function' => '',
+      'allowed_values_function' => 'dotgo_matches_allowed_values_callback',
     ),
     'translatable' => 0,
     'type' => 'list_text',
