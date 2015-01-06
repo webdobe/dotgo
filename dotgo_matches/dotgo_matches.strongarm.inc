@@ -74,7 +74,14 @@ function dotgo_matches_strongarm() {
           'weight' => '1',
         ),
       ),
-      'display' => array(),
+      'display' => array(
+        'webform' => array(
+          'dotgo' => array(
+            'weight' => '1',
+            'visible' => FALSE,
+          ),
+        ),
+      ),
     ),
   );
   $export['field_bundle_settings_node__dotgo_match'] = $strongarm;

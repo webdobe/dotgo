@@ -6,8 +6,38 @@
 
 include_once 'includes/dotgo_webform.field.inc';
 
+/**
+ * Implements hook_dotgo_type_info().
+ */
+function dotgo_webform_dotgo_type_info(){
+  return array(
+    'webform' => array(
+      'label' => t('Form'),
+      'description' => t('This is the webform match type.'),
+      'settings' => array(),
+      'theme' => 'dotgo_webform_default',
+    ),
+  );
+}
 
+/**
+ * Implements hook_theme().
+ */
+function dotgo_webform_theme(){
+  $theme = array(
+    'dotgo_webform_default' => array(
+      'template' => 'theme/dotgo-webform-default',
+    ),
+  );
+  return $theme;
+}
 
+/**
+ * Implements hook_views_api().
+ */
+function dotgo_webform_views_api($module = NULL, $api = NULL) {
+  return array("api" => "3.0");
+}
 
 /**
  * Helper to get match form components.
@@ -41,4 +71,84 @@ function dotgo_webform_get_match_form_component($entity){
   }
 
   return $element;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function dotgo_webform_form_dotgo_match_node_form_alter(&$form, &$form_state, $form_id) {
+  $langcode = $form['language']['#value'];
+
+  // Show DOTGO Form Fields when Type is Form.
+  $form['field_dotgo_match_webform']['#states']['visible']['#edit-field-dotgo-match-type-und-0-value'][] = array('value' => 'webform');
+
+  // Show message when type is default.
+  $form['field_dotgo_match_message']['#states']['visible']['#edit-field-dotgo-match-type-und-0-value'][] = array('value' => 'webform');
+}
+
+/**
+ * Implements template_preprocess_dotgo_default(&$vars);
+ */
+function template_preprocess_dotgo_webform_default(&$vars){
+  $node = isset($vars['node']) ? $vars['node'] : NULL;
+  $params = isset($vars['params']) ? $vars['params'] : array();
+  if($node){
+    $dg = _dotgo_designator();
+    $options = array();
+    $session_variables = array();
+
+    $cid = empty($node->field_dotgo_match_webform) ? NULL : $node->field_dotgo_match_webform[$node->language][0]['cid'];
+    $form_key = empty($node->field_dotgo_match_webform) ? NULL : $node->field_dotgo_match_webform[$node->language][0]['form_key'];
+    if($cid && isset($_REQUEST[$form_key])){
+      module_load_include('inc', 'webform', 'includes/webform.submissions');
+
+      if(!isset($node->match)){
+        $node->match = dotgo_matches_load_match($node);
+      }
+
+      $next_match = dotgo_matches_determin_next_match($node, $params);
+      $engine = 'matches/'.$next_match->nid;
+
+      $data = array(
+        $cid => array(
+          $_REQUEST[$form_key],
+        ),
+      );
+
+      $submission = (object) array(
+        'nid' => $node->match->nid,
+        'sys_user' => NULL,
+        'uid' => 0,
+        'sid' => NULL,
+        'submitted' => REQUEST_TIME,
+        'remote_addr' => ip_address(),
+        'is_draft' => TRUE,
+        'preview' => FALSE,
+        'serial' => NULL,
+        'data' => $data,
+      );
+
+      webform_submission_insert($node->match, $submission);
+
+      // Format the message for dotgo.
+      $vars['message'] = _dotgo_engine_session($engine, $options);
+    } else {
+      // Get the render object.
+      $node_view = node_view($node, $view_mode = 'dotgo', $node->language);
+
+      // Render it.
+      $message = drupal_render($node_view);
+
+      // Pass it through a filter process to make sure dotgo can digest.
+      $message = _dotgo_filter_process($message);
+
+      // Create href for engine.
+      $href = 'matches/'.$node->nid;
+
+      // Format the message for dotgo.
+      $vars['message'] = _dotgo_input_session($form_key, $session_variables, $message, $href, $options);
+    }
+  } else {
+    $vars['message'] = _dotgo_message('No matching node.');
+  }
 }

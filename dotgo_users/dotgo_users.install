@@ -33,10 +33,17 @@ function dotgo_users_schema() {
         'length' => 30,
         'description' => t('Unique dotgo sys_user'),
       ),
+      'token' => array(
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => TRUE
+      ),
     ),
     'primary key' => array('uid'),
+    'indexes' => array(
+      'sys_user' => array('sys_user'),
+      'uid_sys_user' => array('uid', 'sys_user'),
+    ),
   );
   return $schema;
 }
-
-?>

@@ -28,6 +28,12 @@ function dotgo_matches_field_default_field_instances() {
         'type' => 'entityreference_label',
         'weight' => 14,
       ),
+      'dotgo' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
       'featured' => array(
         'label' => 'above',
         'settings' => array(),
@@ -116,7 +122,7 @@ function dotgo_matches_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 6,
+        'weight' => 10,
       ),
       'featured' => array(
         'label' => 'above',
@@ -150,7 +156,7 @@ function dotgo_matches_field_default_field_instances() {
         'apply_chosen' => 0,
       ),
       'type' => 'options_select',
-      'weight' => 12,
+      'weight' => 9,
     ),
   );
 
@@ -183,7 +189,7 @@ function dotgo_matches_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 2,
+        'weight' => 7,
       ),
       'featured' => array(
         'label' => 'above',
@@ -235,7 +241,7 @@ function dotgo_matches_field_default_field_instances() {
       'module' => 'link',
       'settings' => array(),
       'type' => 'link_field',
-      'weight' => 10,
+      'weight' => 7,
     ),
   );
 
@@ -262,10 +268,10 @@ function dotgo_matches_field_default_field_instances() {
         'weight' => 5,
       ),
       'dotgo' => array(
-        'label' => 'above',
+        'label' => 'hidden',
         'module' => 'text',
         'settings' => array(),
-        'type' => 'text_default',
+        'type' => 'text_plain',
         'weight' => 0,
       ),
       'featured' => array(
@@ -291,7 +297,7 @@ function dotgo_matches_field_default_field_instances() {
         'enable' => 0,
         'profile' => '',
       ),
-      'text_processing' => 0,
+      'text_processing' => 1,
       'user_register_form' => FALSE,
     ),
     'widget' => array(
@@ -333,7 +339,7 @@ function dotgo_matches_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 5,
+        'weight' => 9,
       ),
       'featured' => array(
         'label' => 'above',
@@ -387,7 +393,7 @@ function dotgo_matches_field_default_field_instances() {
         'apply_chosen' => 0,
       ),
       'type' => 'options_select',
-      'weight' => 4,
+      'weight' => 3,
     ),
   );
 
@@ -416,7 +422,7 @@ function dotgo_matches_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 4,
+        'weight' => 8,
       ),
       'featured' => array(
         'label' => 'above',
@@ -455,186 +461,26 @@ function dotgo_matches_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-dotgo_match-field_dotgo_match_set_id'
-  $field_instances['node-dotgo_match-field_dotgo_match_set_id'] = array(
-    'bundle' => 'dotgo_match',
-    'comment_alter' => 0,
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => '',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'text',
-        'settings' => array(),
-        'type' => 'text_default',
-        'weight' => 13,
-      ),
-      'featured' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'teaser' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'node',
-    'field_name' => 'field_dotgo_match_set_id',
-    'label' => 'Set ID',
-    'required' => 0,
-    'settings' => array(
-      'linkit' => array(
-        'button_text' => 'Search',
-        'enable' => 0,
-        'profile' => '',
-      ),
-      'text_processing' => 0,
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 1,
-      'module' => 'text',
-      'settings' => array(
-        'size' => 60,
-      ),
-      'type' => 'text_textfield',
-      'weight' => 7,
-    ),
-  );
-
-  // Exported field_instance: 'node-dotgo_match-field_dotgo_match_set_name'
-  $field_instances['node-dotgo_match-field_dotgo_match_set_name'] = array(
-    'bundle' => 'dotgo_match',
-    'comment_alter' => 0,
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => '',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'text',
-        'settings' => array(),
-        'type' => 'text_default',
-        'weight' => 11,
-      ),
-      'featured' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'teaser' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'node',
-    'field_name' => 'field_dotgo_match_set_name',
-    'label' => 'Name',
-    'required' => 0,
-    'settings' => array(
-      'linkit' => array(
-        'button_text' => 'Search',
-        'enable' => 0,
-        'profile' => '',
-      ),
-      'text_processing' => 0,
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 1,
-      'module' => 'text',
-      'settings' => array(
-        'size' => 60,
-      ),
-      'type' => 'text_textfield',
-      'weight' => 8,
-    ),
-  );
-
-  // Exported field_instance: 'node-dotgo_match-field_dotgo_match_set_type'
-  $field_instances['node-dotgo_match-field_dotgo_match_set_type'] = array(
-    'bundle' => 'dotgo_match',
-    'comment_alter' => 0,
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => '',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'list',
-        'settings' => array(),
-        'type' => 'list_default',
-        'weight' => 12,
-      ),
-      'featured' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'teaser' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'node',
-    'field_name' => 'field_dotgo_match_set_type',
-    'label' => 'Type',
-    'required' => 0,
-    'settings' => array(
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 1,
-      'module' => 'options',
-      'settings' => array(
-        'apply_chosen' => 0,
-      ),
-      'type' => 'options_select',
-      'weight' => 9,
-    ),
-  );
-
   // Exported field_instance: 'node-dotgo_match-field_dotgo_match_type'
   $field_instances['node-dotgo_match-field_dotgo_match_type'] = array(
     'bundle' => 'dotgo_match',
     'comment_alter' => 0,
-    'default_value' => array(
-      0 => array(
-        'value' => 'default',
-      ),
-    ),
+    'default_value' => NULL,
     'deleted' => 0,
     'description' => '',
     'display' => array(
-      'cmrl' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 3,
-      ),
       'default' => array(
         'label' => 'above',
-        'module' => 'list',
+        'module' => NULL,
         'settings' => array(),
-        'type' => 'list_default',
-        'weight' => 9,
+        'type' => 'dotgo_type_format',
+        'weight' => 16,
       ),
       'dotgo' => array(
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 3,
+        'weight' => 4,
       ),
       'featured' => array(
         'label' => 'above',
@@ -657,13 +503,11 @@ function dotgo_matches_field_default_field_instances() {
       'user_register_form' => FALSE,
     ),
     'widget' => array(
-      'active' => 1,
-      'module' => 'options',
-      'settings' => array(
-        'apply_chosen' => 0,
-      ),
-      'type' => 'options_select',
-      'weight' => 3,
+      'active' => 0,
+      'module' => 'dotgo_matches',
+      'settings' => array(),
+      'type' => 'dotgo_type_format',
+      'weight' => 4,
     ),
   );
 
@@ -686,6 +530,12 @@ function dotgo_matches_field_default_field_instances() {
         ),
         'type' => 'number_integer',
         'weight' => 10,
+      ),
+      'dotgo' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 5,
       ),
       'featured' => array(
         'label' => 'above',
@@ -716,7 +566,7 @@ function dotgo_matches_field_default_field_instances() {
       'module' => 'number',
       'settings' => array(),
       'type' => 'number',
-      'weight' => 11,
+      'weight' => 10,
     ),
   );
 
@@ -726,10 +576,8 @@ function dotgo_matches_field_default_field_instances() {
   t('Engine');
   t('Match');
   t('Message');
-  t('Name');
   t('Parent');
   t('Pattern');
-  t('Set ID');
   t('Type');
   t('Weight');
 

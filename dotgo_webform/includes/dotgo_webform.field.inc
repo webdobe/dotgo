@@ -1,54 +1,8 @@
 <?php
 /**
  * @file
- * An example field using the Field Types API.
+ * File Implements Field API.
  */
-
-/**
- * @defgroup dotgo_webform Example: Field Types API
- * @ingroup examples
- * @{
- * Examples using Field Types API.
- *
- * This is updated from Barry Jaspan's presentation at Drupalcon Paris,
- * @link http://acquia.com/community/resources/acquia-tv/intro-field-api-module-developers Video Presentation @endlink
- *
- * Providing a field requires:
- * - Defining a field:
- *   - hook_field_info()
- *   - hook_field_schema()
- *   - hook_field_validate()
- *   - hook_field_is_empty()
- *
- * - Defining a formatter for the field (the portion that outputs the field for
- *   display):
- *   - hook_field_formatter_info()
- *   - hook_field_formatter_view()
- *
- * - Defining a widget for the edit form:
- *   - hook_field_widget_info()
- *   - hook_field_widget_form()
- *
- * Our module defines the field in dotgo_webform_field_info(),
- * dotgo_webform_field_validate() and dotgo_webform_field_is_empty().
- * dotgo_webform_field_schema() is implemented in dotgo_webform.install.
- *
- * Our module sets up a formatter in dotgo_webform_field_formatter_info() and
- * dotgo_webform_field_formatter_view(). These are the API hooks that present
- * formatted and themed output to the user.
-
- * And finally, our module defines the widet in
- * dotgo_webform_field_widget_info() and dotgo_webform_field_widget_form().
- * The widget is the form element used to receive input from the user
- * when the field is being populated.
- *
- * @see field_types
- * @see field
- */
-
-/***************************************************************
- * Field Type API hooks
- ***************************************************************/
 
 /**
  * Implements hook_field_info().
@@ -80,16 +34,7 @@ function dotgo_webform_field_info() {
  * @see dotgo_webform_field_widget_error()
  */
 function dotgo_webform_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
-  /*foreach ($items as $delta => $item) {
-    if (!empty($item['rgb'])) {
-      if (! preg_match('@^#[0-9a-f]{6}$@', $item['rgb'])) {
-        $errors[$field['field_name']][$langcode][$delta][] = array(
-          'error' => 'dotgo_webform_invalid',
-          'message' => t('Color must be in the HTML format #abcdef.'),
-        );
-      }
-    }
-  }*/
+
 }
 
 
@@ -125,12 +70,6 @@ function dotgo_webform_field_formatter_info() {
       'label' => t('Dotgo webform input'),
       'field types' => array('dotgo_webform'),
     ),
-    /*
-    // This formatter changes the background color of the content region.
-    'dotgo_webform_color_background' => array(
-      'label' => t('Change the background of the output text'),
-      'field types' => array('dotgo_webform'),
-    ),*/
   );
 }
 
@@ -157,34 +96,12 @@ function dotgo_webform_field_formatter_view($entity_type, $entity, $field, $inst
           // "<p style="color: #hexcolor">The color code ... #hexcolor</p>".
           // See theme_html_tag().
           '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => array(
-            'style' => 'color: ' . $item['rgb'],
-          ),
-          '#value' => t('The color code in this field is @code', array('@code' => $item['rgb'])),
+          '#tag' => 'div',
+          '#value' => t($item['name']),
         );
       }
       break;
-/*
-    // This formatter adds css to the page changing the '.region-content' area's
-    // background color. If there are many fields, the last one will win.
-    case 'dotgo_webform_color_background':
-      foreach ($items as $delta => $item) {
-        $element[$delta] = array(
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#value' => t('The content area color has been changed to @code', array('@code' => $item['rgb'])),
-          '#attached' => array(
-            'css' => array(
-              array(
-                'data' => 'div.region-content { background-color:' . $item['rgb'] . ';}',
-                'type' => 'inline',
-              ),
-            ),
-          ),
-        );
-      }
-      break;*/
+
   }
 
   return $element;
@@ -206,20 +123,10 @@ function dotgo_webform_field_formatter_view($entity_type, $entity, $field, $inst
  */
 function dotgo_webform_field_widget_info() {
   return array(
-    /*
-    'dotgo_webform_text' => array(
-      'label' => t('RGB value as #ffffff'),
-      'field types' => array('dotgo_webform'),
-    ),*/
     'dotgo_webform_component' => array(
-      'label' => t('DOTGO Webform Component'),
+      'label' => t('Webform Component'),
       'field types' => array('dotgo_webform'),
     ),
-    /*
-    'dotgo_webform_colorpicker' => array(
-      'label' => t('Color Picker'),
-      'field types' => array('dotgo_webform'),
-    ),*/
   );
 }
 
@@ -249,38 +156,10 @@ function dotgo_webform_field_widget_form(&$form, &$form_state, $field, $instance
   $widget['#delta'] = $delta;
 
   switch ($instance['widget']['type']) {
-/*
-    case 'dotgo_webform_colorpicker':
-      $widget += array(
-        '#suffix' => '<div class="field-example-colorpicker"></div>',
-        '#attributes' => array('class' => array('edit-field-example-colorpicker')),
-        '#attached' => array(
-          // Add Farbtastic color picker.
-          'library' => array(
-            array('system', 'farbtastic'),
-          ),
-          // Add javascript to trigger the colorpicker.
-          'js' => array(drupal_get_path('module', 'dotgo_webform') . '/dotgo_webform.js'),
-        ),
-      );
-
-    // DELIBERATE fall-through: From here on the dotgo_webform_text and
-    // dotgo_webform_colorpicker are exactly the same.
-    case 'dotgo_webform_text':
-      $widget += array(
-        '#type' => 'textfield',
-        '#default_value' => $value,
-        // Allow a slightly larger size that the field length to allow for some
-        // configurations where all characters won't fit in input field.
-        '#size' => 7,
-        '#maxlength' => 7,
-      );
-      break;
-*/
     case 'dotgo_webform_component':
       $options = array('_none' => '- Create new component -');
       $default_component = array();
-      if(isset($element['#entity'])){
+      if(isset($element['#entity']->nid)){
         $entity = $element['#entity'];
         $components = dotgo_webform_get_match_components($entity);
         if(!empty($components)){
@@ -323,19 +202,34 @@ function dotgo_webform_field_widget_form(&$form, &$form_state, $field, $instance
         '#suffix' => '</div>',
       );
 
-      $widget['cid'] = array(
-        '#prefix' => '<div id="dotgo-webform-cid-'.$delta.'-wrapper" class="dotgo-webform-item">',
-        '#suffix' => '</div>',
-        '#type' => 'select',
-        '#title' => 'Component',
-        '#options' => $options,
-        '#weight' => $weight++,
-        '#default_value' => isset($default_component['cid']) ? $default_component['cid'] : '_none',
-        '#ajax' => array(
-          'callback' => '_dotgo_webform_elements_callback',
-          'wrapper' => 'dotgo-webform-'.$delta,
-        ),
-      );
+      if(isset($default_component['cid'])){
+        $widget['edit'] = array(
+          '#prefix' => '<div id="dotgo-webform-cid-'.$delta.'-wrapper" class="dotgo-webform-item"><div class="form-item"><label for="edit-field-dotgo-match-webform-und-0-cid">Component </label>',
+          '#suffix' => '</div></div>',
+          '#type' => 'submit',
+          '#title' => 'Component',
+          '#value' => 'Edit '.$default_component['name'],
+          '#submit' => array('_dotgo_webform_cid_submit'),
+        );
+        $widget['cid'] = array(
+          '#type' => 'hidden',
+          '#value' => isset($default_component['cid']) ? $default_component['cid'] : '_none',
+        );
+      } else {
+        $widget['cid'] = array(
+          '#prefix' => '<div id="dotgo-webform-cid-'.$delta.'-wrapper" class="dotgo-webform-item">',
+          '#suffix' => '</div>',
+          '#type' => 'select',
+          '#title' => 'Component',
+          '#options' => $options,
+          '#weight' => $weight++,
+          '#default_value' => isset($default_component['cid']) ? $default_component['cid'] : '_none',
+          '#ajax' => array(
+            'callback' => '_dotgo_webform_elements_callback',
+            'wrapper' => 'dotgo-webform-'.$delta,
+          ),
+        );
+      }
 
       $widget['name'] = array(
         '#prefix' => '<div id="dotgo-webform-name-'.$delta.'-wrapper" class="dotgo-webform-item">',
@@ -405,10 +299,32 @@ function _dotgo_webform_elements_callback($form, $form_state) {
  * Form callback to check if form element exists.
  * Currently always returns FALSE.
  */
+function _dotgo_webform_cid_submit($form, &$form_state) {
+  $node = $form['#node'];
+  $cid = $form_state['values']['field_dotgo_match_webform'][$node->language][0]['cid'];
+
+  $url = "node/" . $node->match->nid . "/webform/components/" . $cid;
+
+  $form_state['redirect'] = array(
+    $url, array(
+      'query' => drupal_get_destination()
+    )
+  );
+
+  unset($_GET['destination']);
+  drupal_static_reset('drupal_get_destination');
+  drupal_get_destination();
+}
+
+/**
+ * Form callback to check if form element exists.
+ *
+ *
+ * Currently always returns FALSE.
+ */
 function _dotgo_webform_element_form_key_exists() {
   return FALSE;
 }
-
 
 /**
  * Validate the individual fields and then convert them into a single HTML RGB
@@ -430,7 +346,6 @@ function dotgo_webform_component_validate($element, &$form_state) {
 function dotgo_webform_field_attach_validate($entity_type, $entity, &$errors) {
   if ($entity_type == 'node' && $entity->type == 'dotgo_match') {
     $field_info = field_info_instances($entity_type, $entity->type);
-    $entity->match = dotgo_matches_load_match($entity);
     foreach($field_info as $field_name => $field){
       if(isset($field['widget']['type']) && $field['widget']['type'] == 'dotgo_webform'){
         $form_key = $entity->{$field_name}[$entity->language][0]['form_key'];
@@ -462,12 +377,14 @@ function dotgo_webform_field_attach_submit($entity_type, $entity, $form, &$form_
   if ($entity_type == 'node' && $entity->type == 'dotgo_match') {
     $field_info = field_info_instances($entity_type, $entity->type);
     $entity->match = dotgo_matches_load_match($entity);
+    if(!$entity->match && isset($entity->field_dotgo_match[$entity->language][0]['target_id'])) {
+      $entity->match = node_load($entity->field_dotgo_match[$entity->language][0]['target_id']);
+    }
     foreach($field_info as $field_name => $field){
       if(isset($field['widget']['type']) && $field['widget']['type'] == 'dotgo_webform_component'){
         foreach($form_state['input'][$field_name][$entity->language] as $delta => $values){
           // When component is set to none we create one.
           if ($values['cid'] == '_none' && $values['name'] && $values['form_key'] && $values['type']) {
-            webform_ensure_record($entity->match);
 
             $component = array(
               'nid' => $entity->match->nid,
@@ -484,6 +401,18 @@ function dotgo_webform_field_attach_submit($entity_type, $entity, $form, &$form_
 
             // We make sure the field is getting the new cid
             $entity->{$field_name}[$entity->language][$delta] = $values;
+
+            $url = "node/" . $entity->match->nid . "/webform/components/" . $values['cid'];
+
+            $form_state['redirect'] = array(
+              $url, array(
+                'query' => drupal_get_destination()
+              )
+            );
+
+            unset($_GET['destination']);
+            drupal_static_reset('drupal_get_destination');
+            drupal_get_destination();
           }
         }
       }
@@ -508,28 +437,3 @@ function dotgo_webform_field_widget_error($element, $error, $form, &$form_state)
       break;
   }
 }
-
-
-/**
- * Implements hook_menu().
- *
- * Provides a simple user interface that tells the developer where to go.
-
-function dotgo_webform_menu() {
-  $items['examples/dotgo_webform'] = array(
-    'title' => 'Field Example',
-    'page callback' => '_dotgo_webform_page',
-    'access callback' => TRUE,
-  );
-  return $items;
-}
- */
-/**
- * A simple page to explain to the developer what to do.
-
-function _dotgo_webform_page() {
-  return t("The Field Example provides a field composed of an HTML RGB value, like #ff00ff. To use it, add the field to a content type.");
-}
-/**
- * @} End of "defgroup dotgo_webform".
- */

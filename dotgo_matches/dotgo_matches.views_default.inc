@@ -344,6 +344,7 @@ function dotgo_matches_views_default_views() {
   $handler->display->display_options['fields']['field_dotgo_match_type']['id'] = 'field_dotgo_match_type';
   $handler->display->display_options['fields']['field_dotgo_match_type']['table'] = 'field_data_field_dotgo_match_type';
   $handler->display->display_options['fields']['field_dotgo_match_type']['field'] = 'field_dotgo_match_type';
+  $handler->display->display_options['fields']['field_dotgo_match_type']['type'] = 'list_default';
   /* Field: Content: Parent */
   $handler->display->display_options['fields']['field_dotgo_match_parent']['id'] = 'field_dotgo_match_parent';
   $handler->display->display_options['fields']['field_dotgo_match_parent']['table'] = 'field_data_field_dotgo_match_parent';

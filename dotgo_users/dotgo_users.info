@@ -1,6 +1,8 @@
-name = Dotgo Users Engine
-description = Enables Dotgo Users Engine
+name = Dotgo Users
+description = Implements functionality for DOTGO Users.
 dependencies[] = dotgo_api
+dependencies[] = dotgo
+dependencies[] = views
 package = DOTGO
 core = 7.x
 

@@ -4,7 +4,6 @@
  * Code for the DOTGO API module.
  */
 
-
 include_once 'includes/dotgo_api.util.inc';
 include_once 'includes/dotgo_api.error.inc';
 
@@ -69,11 +68,7 @@ function dotgo_api_index_cmrl() {
 
   //check address to make sure it is either dotgo or a privileged user, after all sensitive info may be accessed anonymously otherwise.
   $visitor = $_SERVER['REMOTE_ADDR'];
-  if (preg_match("/174.129.234.11/", $visitor) ||
-    preg_match("/" . variable_get('dotgo_admin_ip', '127.0.0.1') . "/", $visitor) ||
-    variable_get('dotgo_debug', 0)
-  ) {
-
+  if (variable_get('dotgo_debug', 1)) {
     // header info
     header('Content-Type: text/xml');
 
@@ -95,22 +90,25 @@ function dotgo_api_index_cmrl() {
 function dotgo_api_page_callback() {
   // callback to generic dotgo/%, display help text if no argument
   // otherwise, look for a function with same name as arg(1); error if not found
-  //check address to make sure it is either dotgo or a privileged user, after all sensitive info may be accessed anonymously otherwise.
-  $visitor = $_SERVER['REMOTE_ADDR'];
-  if (preg_match("/" . variable_get('dotgo_server_ip', '127.0.0.1') . "/", $visitor) ||
-    preg_match("/" . variable_get('dotgo_admin_ip', '127.0.0.1') . "/", $visitor) ||
-    variable_get('dotgo_debug', 1)
-  ) {
-
+  if (variable_get('dotgo_debug', 1)) {
     // did not give us an argument
-    $function = 'dotgo_'.arg(1);
+    $function = arg(1);
     if ($function == '') {
       return t('This page is not meant to be called directly.');
     }
     else {
+      // Set to DOTGO module functions.
+      $function = 'dotgo_'.arg(1);
+
+      // Set alt functions for modules with alternative naming schemes.
+      $alt_function = arg(1);
       if (function_exists($function)) {
-        $arg = trim($_REQUEST['sys_argument']);
+        $arg = isset($_REQUEST['sys_argument']) ? trim($_REQUEST['sys_argument']) : NULL;
         print $function($arg);
+      }
+      elseif (function_exists($alt_function)) {
+        $arg = isset($_REQUEST['sys_argument']) ? trim($_REQUEST['sys_argument']) : NULL;
+        print $alt_function($arg);
       }
       else {
         print _dotgo_message(t('The server you have contacted is not correctly configured.  Contact the site administrator.'));

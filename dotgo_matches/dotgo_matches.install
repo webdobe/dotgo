@@ -1,6 +1,24 @@
 <?php
 
 /**
+ * Implements hook_field_schema().
+ */
+function dotgo_matches_field_schema($field) {
+  return array(
+    'columns' => array(
+      'value' => array(
+        'description' => 'The match type (default, engine, form, etc.).',
+        'type' => 'varchar',
+        'length' => 16,
+      ),
+    ),
+    'indexes' => array(
+      'value' => array('value'),
+    ),
+  );
+}
+
+/**
  * Implementation of hook_schema().
  */
 function dotgo_matches_schema() {
@@ -8,3 +26,4 @@ function dotgo_matches_schema() {
   $schema['cache_matches'] = drupal_get_schema_unprocessed('system', 'cache');
   return $schema;
 }
+

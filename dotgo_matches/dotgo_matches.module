@@ -5,9 +5,15 @@
  */
 
 include_once 'dotgo_matches.features.inc';
+include_once 'includes/dotgo_matches.field.inc';
 include_once 'includes/dotgo_matches.util.inc';
 include_once 'includes/dotgo_matches.form.inc';
 include_once 'includes/dotgo_matches.cache.inc';
+
+/**
+ * Name of default DOTGO Match content type.
+ */
+define('DOTGO_MATCH_TYPE', 'dotgo_match');
 
 /**
  * Implements hook_menu().
@@ -19,25 +25,25 @@ function dotgo_matches_menu() {
     'description' => 'Configure settings for the Matches',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('dotgo_matches_apps_configure_form'),
-    'access arguments' => array('administer dotgo_matches'),
+    'access arguments' => array('administer dotgo'),
   );
   return $items;
 }
 
 /**
- * Implements hook_permission().
+ * Implements hook_theme().
  */
-function dotgo_matches_permission() {
-  return array(
-    'administer dotgo_matches' => array(
-      'title' => t('Administer DOTGO Matches'),
-      'description' => t('Configure settings for DOTGO Matches'),
+function dotgo_matches_theme(){
+  $theme = array(
+    'dotgo_matches_default' => array(
+      'template' => 'theme/dotgo-matches-default',
     ),
   );
+  return $theme;
 }
 
 /**
- * Implementation of hook_dotgo_engine.
+ * Implementation of hook_dotgo_engine().
  */
 function dotgo_matches_dotgo_engine() {
   $myEngines = array();
@@ -46,6 +52,20 @@ function dotgo_matches_dotgo_engine() {
     'engine_href' => 'matches',
   );
   return $myEngines;
+}
+
+/**
+ * Implements hook_dotgo_type_info().
+ */
+function dotgo_matches_dotgo_type_info(){
+  return array(
+    'default' => array(
+      'label' => t('Default'),
+      'description' => t('This is the default match type.'),
+      'settings' => array(),
+      'theme' => 'dotgo_matches_default',
+    ),
+  );
 }
 
 /**
@@ -92,47 +112,17 @@ function dotgo_matches($sys_argument) {
     $params['match_state_cache'] = user_password($length = 10);
   }
 
-  $options = array();
-  $match_state = array();
-
   // We have a cached match state.
   $cid = dotgo_matches_get_cache_id(DOTGO_CACHE_MATCH_STATE, $params['sys_user'], FALSE, array($params['match_state_cache']));
 
   if(dotgo_matches_get_cache(DOTGO_CACHE_MATCH_STATE, $cid, $return)){
     return $return;
   } else {
-    switch ($type) {
-      case "form":
-        $input_id = empty($node->field_dotgo_match_webform) ? NULL : $node->field_dotgo_match_webform[$node->language][0]['form_key'];
-        if(isset($_REQUEST[$input_id])){
-          $next_match = dotgo_matches_determin_next_match($node, $params);
-          $options = array();
-          $engine = 'matches/'.$next_match->nid;
-          $return = _dotgo_engine_session($engine, $options);
-        } else {
-          $message = dotgo_matches_render_match_form_message($node);
-          $href = 'matches/'.$node->nid;
-          $return = _dotgo_input_session($input_id, $session_variables, $message, $href, $options);
-        }
-        break;
-      case "engine":
-        $options = array();
-        $engine = $node->field_dotgo_match_engine[$node->language][0]['url'];
-        $return = _dotgo_engine_session($engine, $options);
-        break;
-      case "default":
-        $message = empty($node->field_dotgo_match_message) ? NULL : $node->field_dotgo_match_message[$node->language][0]['value'];
-        $children = dotgo_matches_get_by_parent($node->nid);
-        if(!empty($children)){
-          foreach($children as $child){
-            $child = node_load($child);
-            $query = $dg . ' ' . variable_get('dotgo_matches_match', 'matches') . ' ' . $child->nid;
-            $message .= _dotgo_make_anchor_query($query) . $child->title . '<br />';
-          }
-        }
-        $return = _dotgo_message($message);
-        break;
-    }
+    // Get type info;
+    $info = dotgo_info_types($type);
+
+    // Theme return;
+    $return = theme($info['theme'], array('node' => $node, 'params' => $params));
   }
 
   dotgo_matches_set_cache(DOTGO_CACHE_MATCH_STATE, $cid, $return);
@@ -185,4 +175,37 @@ function dotgo_matches_allowed_values_callback($field, $instance, $entity_type, 
     return $allowed_values['options'];
   }
   return array('_none' => t('- None -'));
+}
+
+/**
+ * Implements template_preprocess_dotgo_default(&$vars);
+ */
+function template_preprocess_dotgo_matches_default(&$vars){
+  $node = isset($vars['node']) ? $vars['node'] : NULL;
+  if($node){
+    $dg = _dotgo_designator();
+    // Get the render object.
+    $node_view = node_view($node, $view_mode = 'dotgo', $node->language);
+
+    // Render it.
+    $message = drupal_render($node_view);
+
+    // Pass it through a filter process to make sure dotgo can digest.
+    $message = _dotgo_filter_process($message);
+
+    // We want to provide links to each child node.
+    $children = dotgo_matches_get_by_parent($node->nid);
+    if(!empty($children)){
+      foreach($children as $child){
+        $child = node_load($child);
+        $query = $dg . ' ' . variable_get('dotgo_matches_match', 'matches') . ' ' . $child->nid;
+        $message .= '<br />' . _dotgo_make_anchor_query($query) . $child->title;
+      }
+    }
+
+    // Format the message for dotgo.
+    $vars['message'] = _dotgo_message($message);
+  } else {
+    $vars['message'] = _dotgo_message('No matching node.');
+  }
 }

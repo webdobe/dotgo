@@ -4,64 +4,79 @@
  * Code for the DOTGO module.
  */
 
+include_once 'includes/dotgo.util.inc';
+include_once 'includes/dotgo.menu.inc';
+include_once 'includes/dotgo.filter.inc';
+
 /**
- * Name of default DOTGO Match content type.
+ * Implements hook_permission().
  */
-define('DOTGO_MATCH_TYPE', 'dotgo_match');
+function dotgo_permission() {
+  return array(
+    'administer dotgo' => array(
+      'title' => t('Administer DOTGO'),
+      'description' => t('Configure settings for DOTGO'),
+    ),
+  );
+}
 
 /**
  * Implements hook_theme().
  */
-
-function dotgo_theme($existing, $type, $theme, $path) {
-  $theme = array();
+function dotgo_theme(){
+  $theme = array(
+    'node__dotgo' => array(
+      'render element' => 'content',
+      'base hook' => 'node',
+      'template' => 'node--dotgo',
+      'path' => drupal_get_path('module', 'dotgo') . '/theme',
+    ),
+    'dotgo_default' => array(
+      'template' => 'theme/dotgo-default',
+    ),
+    'dotgo_menu' => array(
+      'template' => 'theme/dotgo-menu',
+    ),
+  );
   return $theme;
 }
 
-
 /**
- * Implements hook_filter_info().
+ * Implementation of hook_dotgo_menu
+ *
+ * @see includes/dotgo.menu.inc
  */
-function dotgo_filter_info() {
-  $filters = array();
-  $filters['dotgo'] = array(
-    'title' => t('DOTGO'),
-    'description' => t('DOTGO Filters'),
-    //'prepare callback' => '_dotgo_filter_prepare',
-    'process callback' => '_dotgo_filter_process',
-    //'tips callback' => '_dotgo_filter_tips',
+function dotgo_dotgo_menu() {
+  $dg = _dotgo_designator();
+  $items = array();
+
+  $items['front'] = array(
+    'title' => t('Home'),
+    'query' => $dg,
+    'menu_name' => 'main',
+    'weight' => 0,
   );
-  return $filters;
+
+  return $items;
 }
 
 /**
- * Implements filter prepare callback.
+ * Implements hook_entity_info_alter().
  */
-function _dotgo_filter_prepare() {
-
+function dotgo_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['dotgo'] = array(
+    'label' => t('DOTGO'),
+    'custom settings' => TRUE,
+  );
 }
 
 /**
- * Implements filter process callback.
+ * Implements hook_preprocess_node().
  */
-function _dotgo_filter_process($text) {
-  $filtered = _filter_autop($text);
-
-  $filtered = preg_replace("/<p[^>]*?>/", "", $filtered);
-  $filtered = str_replace("</p>", "<br />", $filtered);
-  $filtered = preg_replace('/<br\s*?\/?>\s*$/', '', $filtered);
-
-  $filter = new stdClass();
-  $filter->settings['allowed_html'] = '<a> <br /> <url> <block> <query> <follow>';
-  $filter->settings['filter_html_nofollow'] = 0;
-  $filtered = _filter_html($filtered, $filter);
-
-  return $filtered;
-}
-
-/**
- * Implements filter tips callback.
- */
-function _dotgo_filter_tips() {
+function dotgo_preprocess_node(&$vars) {
+  if($vars['view_mode'] == 'dotgo') {
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['view_mode'];
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__' . $vars['view_mode'];
+  }
 }
 

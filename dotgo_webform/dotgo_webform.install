@@ -40,3 +40,43 @@ function dotgo_webform_field_schema($field) {
     ),
   );
 }
+
+/**
+ * Implementation of hook_schema().
+ */
+function dotgo_webform_schema() {
+  $schema = array();
+  $schema['dotgo_webform_submissions'] = array(
+    'description' => t('Stores per sys_user submissions.'),
+    'fields' => array(
+      'sid' => array(
+        'description' => 'The unique identifier for this submission.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'The node identifier of a webform.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sys_user' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'description' => t('Unique DOTGO sys_user'),
+      ),
+    ),
+    'primary key' => array('sid'),
+    'unique keys' => array(
+      'sid_nid' => array('sid', 'nid'),
+      'nid_sid' => array('nid', 'sid'),
+    ),
+    'indexes' => array(
+      'nid_sys_user_sid' => array('nid', 'sys_user', 'sid'),
+      'nid_sid' => array('nid', 'sid'),
+    ),
+  );
+  return $schema;
+}

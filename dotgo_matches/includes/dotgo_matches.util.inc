@@ -150,24 +150,6 @@ function dotgo_matches_get_match_form_element($entity){
   return $element;
 }
 
-function dotgo_matches_render_match_form_message($entity){
-  $message = empty($entity->field_dotgo_match_message) ? '' : $entity->field_dotgo_match_message[$entity->language][0]['value'];
-  $set_type = empty($entity->field_dotgo_match_set_type) ? '' : $entity->field_dotgo_match_set_type[$entity->language][0]['value'];
-
-  switch ($set_type) {
-    case "date":
-    case "email":
-    case "textfield":
-    case "number":
-    case "select":
-    case "time":
-      $message = $message;
-      break;
-  }
-
-  return $message;
-}
-
 function dotgo_matches_get_form_types(){
   return array(
     "date" => "Date",
@@ -286,7 +268,7 @@ function dotgo_matches_determin_next_match($node, $params){
 
   if(empty($children)){
     if(empty($node->field_dotgo_match_parent)){
-      return $node;
+      return;
     } else {
       $parent = $node->field_dotgo_match_parent[$node->language][0]['target_id'];
       $children = dotgo_matches_get_by_parent($parent);
@@ -300,8 +282,11 @@ function dotgo_matches_determin_next_match($node, $params){
     }
   }
 
-  array_values($children);
+  if(empty($children)){
+    return;
+  }
 
+  array_values($children);
   return node_load($children[0]);
 }
 

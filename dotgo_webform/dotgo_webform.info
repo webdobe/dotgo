@@ -4,7 +4,14 @@ core = 7.x
 package = DOTGO
 version = 7.x-1.0-beta1
 project = dotgo_webform
+dependencies[] = webform
 dependencies[] = defaultconfig
+dependencies[] = dotgo_webform
+dependencies[] = features
+explanation = Field type(s) in use - see <a href="/admin/reports/fields">Field list</a>
 features[defaultconfig][] = strongarm:webform_node_dotgo_match
 features[features_api][] = api:2
-features_exclude[dependencies][defaultconfig] = defaultconfig
+features[field_base][] = field_dotgo_match_webform
+features[field_instance][] = node-dotgo_match-field_dotgo_match_webform
+mtime = 1420107450
+required = 1

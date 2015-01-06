@@ -253,6 +253,9 @@ function _dotgo_make_anchor($content) {
 function _dotgo_designator() {
   $pieces = explode('.', $_SERVER['HTTP_HOST']);
   array_pop($pieces);
+  if(count($pieces) > 1 && variable_get('dotgo_subdomain_designator', 0)){
+    $pieces = array_pop($pieces);
+  }
   return implode('.', $pieces);
 }
 
@@ -310,44 +313,6 @@ function _dotgo_get_parameters($query = TRUE, $sys = TRUE, $session = FALSE){
     }
   }
   return $parameters;
-}
-
-/**
- * Impliments _dotgo_build_menu.
- *
- * @param array $menus
- * @param null $type
- * @param array $items
- * @param null $account
- * @return string
- */
-function _dotgo_build_menu($menus = array(), $type = NULL, $items = array(), $account = NULL) {
-  $menus += module_invoke_all('dotgo_menu', $account);
-  if ($menus) {
-    foreach ($menus as $menu) {
-      if ($type == NULL || $menu['type'] == NULL || $menu['type'] == $type) {
-        if ($items) {
-          foreach ($items as $item) {
-            if ($menu['name'] == NULL || $menu['name'] != $item) {
-              if (!$menu['perm'] || user_access($menu['perm'], $account, FALSE)) {
-                $query .= _dotgo_make_anchor_query($menu['query']) . $menu['text'] . '<br />';
-              }
-            }
-          }
-        }
-        else {
-          if (!$menu['perm'] || user_access($menu['perm'], $account, FALSE)) {
-            $query .= _dotgo_make_anchor_query($menu['query']) . $menu['text'] . '<br />';
-          }
-        }
-      }
-    }
-    if ($query) {
-      $msg .= '<br />REPLY MENU #<br />';
-      $msg .= $query;
-    }
-    return $msg;
-  }
 }
 
 /**
