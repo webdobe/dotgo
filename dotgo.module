@@ -37,6 +37,9 @@ function dotgo_theme(){
     'dotgo_menu' => array(
       'template' => 'theme/dotgo-menu',
     ),
+    'dotgo_message' => array(
+
+    ),
   );
   return $theme;
 }
@@ -79,4 +82,19 @@ function dotgo_preprocess_node(&$vars) {
     $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__' . $vars['view_mode'];
   }
 }
+
+function theme_dotgo_message($vars){
+  switch ($vars['format']) {
+    case 'xml':
+      $output = _dotgo_message($vars['message']);
+      break;
+    case 'default':
+      $output = t($vars['message']);
+      break;
+  }
+  return $output;
+}
+
+
+
 

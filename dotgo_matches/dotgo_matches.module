@@ -75,6 +75,7 @@ function dotgo_matches($sys_argument) {
   global $user;
   $dg = _dotgo_designator();
   $return = '';
+  $format = 'xml';
   $params = _dotgo_get_parameters();
   $new_user = TRUE;
   $session_variables = array();
@@ -105,7 +106,8 @@ function dotgo_matches($sys_argument) {
   }
 
   if(!node_access('view', $node, $user)){
-    return _dotgo_message('You are unauthorized to view match.');
+    $message = 'You are unauthorized to view match.';
+    return theme('dotgo_message', array('message' => $message, 'format' => $format));
   }
 
   if(!isset($params['match_state_cache'])){
@@ -122,7 +124,7 @@ function dotgo_matches($sys_argument) {
     $info = dotgo_info_types($type);
 
     // Theme return;
-    $return = theme($info['theme'], array('node' => $node, 'params' => $params));
+    $return = theme($info['theme'], array('node' => $node, 'params' => $params, 'format' => 'xml'));
   }
 
   dotgo_matches_set_cache(DOTGO_CACHE_MATCH_STATE, $cid, $return);
@@ -131,36 +133,68 @@ function dotgo_matches($sys_argument) {
 }
 
 /**
+ * Implementation of hook_entity_insert().
+ */
+function dotgo_matches_entity_insert($entity, $type) {
+  if ($type == 'node' && $entity->type == 'dotgo_match') {
+
+  }
+}
+
+/**
  * Implementation of hook_entity_presave().
  */
 function dotgo_matches_entity_presave($entity, $type) {
   if ($type == 'node' && $entity->type == 'dotgo_match') {
-    $parent = NULL;
-    if (isset($entity->field_dotgo_match_parent[$entity->language][0]['target_id'])) {
-      $parent = $entity->field_dotgo_match_parent[$entity->language][0]['target_id'];
-    }
-
-    $match = NULL;
-    if (isset($entity->field_dotgo_match[$entity->language][0]['target_id'])) {
-      $match = $entity->field_dotgo_match[$entity->language][0]['target_id'];
-    }
-
-    if ($parent) {
-      if (!$match) {
-        $match = dotgo_matches_get_match($parent);
-        $entity->field_dotgo_match[$entity->language][0]['target_id'] = $match;
-      }
-      if($match == $entity->nid) {
-        unset($entity->field_dotgo_match_parent[$entity->language]);
-      }
-    } else {
+    $dg = _dotgo_designator();
+    $tld = _dotgo_tld();
+    // If we have no parent unset match and parent.
+    if (empty($entity->field_dotgo_match_parent)) {
       unset($entity->field_dotgo_match[$entity->language]);
       unset($entity->field_dotgo_match_parent[$entity->language]);
     }
+    // Else we do things with parent.
+    else {
+      // If for some reason we have no match. We find it out and set it.
+      if (empty($entity->field_dotgo_match)) {
+        $match =  dotgo_matches_get_match($entity->field_dotgo_match_parent[$entity->language][0]['target_id']);
+        $entity->field_dotgo_match[$entity->language][0]['target_id'] = $match;
+      }
+      // If our match is the top level match we unset our parent.
+      if($entity->field_dotgo_match[$entity->language][0]['target_id'] == $entity->nid) {
+        unset($entity->field_dotgo_match_parent[$entity->language]);
+      }
+    }
 
-    //make sure we always have a match.
+    // Make sure we always have a match.
     if (!isset($entity->field_dotgo_match[$entity->language][0]['target_id']) && isset($entity->nid)) {
       $entity->field_dotgo_match[$entity->language][0]['target_id'] = $entity->nid;
+    }
+
+    if($entity->is_new){
+      if(empty($entity->field_dotgo_match_weight[$entity->language])){
+        if(isset($entity->field_dotgo_match_parent[$entity->language][0]['target_id'])){
+          // We can determine the new nodes weight by counting the nodes parents children.
+          $children = dotgo_matches_get_by_parent($entity->field_dotgo_match_parent[$entity->language][0]['target_id']);
+          $entity->field_dotgo_match_weight[$entity->language][]['value'] = count($children);
+        } else {
+          $entity->field_dotgo_match_weight[$entity->language][]['value'] = 0;
+        }
+      }
+    }
+  }
+}
+
+function dotgo_matches_node_load($nodes, $types) {
+  // Decide whether any of $types are relevant to our purposes.
+  if (count(array_intersect(array('dotgo_match'), $types))) {
+    $dg = _dotgo_designator();
+    $tld = _dotgo_tld();
+    foreach($nodes as $node){
+      $nodes[$node->nid]->dotgo = new stdClass();
+      $nodes[$node->nid]->dotgo->query = $dg.' matches '.$node->nid;
+      $nodes[$node->nid]->dotgo->simulator_message = dotgo_matches_load_simulator_message($nodes[$node->nid]);
+      $nodes[$node->nid]->dotgo->user_query = dotgo_matches_load_user_query($nodes[$node->nid]);
     }
   }
 }
@@ -182,6 +216,7 @@ function dotgo_matches_allowed_values_callback($field, $instance, $entity_type, 
  */
 function template_preprocess_dotgo_matches_default(&$vars){
   $node = isset($vars['node']) ? $vars['node'] : NULL;
+  $vars['format'] = isset($vars['format']) ? $vars['format'] : 'default';
   if($node){
     $dg = _dotgo_designator();
     // Get the render object.
@@ -196,16 +231,24 @@ function template_preprocess_dotgo_matches_default(&$vars){
     // We want to provide links to each child node.
     $children = dotgo_matches_get_by_parent($node->nid);
     if(!empty($children)){
+      $count = 1;
       foreach($children as $child){
         $child = node_load($child);
         $query = $dg . ' ' . variable_get('dotgo_matches_match', 'matches') . ' ' . $child->nid;
-        $message .= '<br />' . _dotgo_make_anchor_query($query) . $child->title;
+        if($vars['format'] == 'default'){
+          $message .= '<br />(' . $count . ')' . $child->title;
+        } else {
+          $message .= '<br />' . _dotgo_make_anchor_query($query) . $child->title;
+        }
+        $count++;
       }
     }
 
+    $vars['message'] = $message;
     // Format the message for dotgo.
-    $vars['message'] = _dotgo_message($message);
+    $vars['message'] = theme('dotgo_message', $vars);
   } else {
-    $vars['message'] = _dotgo_message('No matching node.');
+    $vars['message'] = 'No matching node.';
+    $vars['message'] = theme('dotgo_message', $vars);
   }
 }

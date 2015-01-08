@@ -38,11 +38,12 @@ function dotgo_matches_get_by_parent($nid, $bundle = DOTGO_MATCH_TYPE, $status =
 
   $query = db_select('node', 'n');
   $query->leftJoin('field_data_field_dotgo_match_parent', 'p', "n.nid = p.entity_id");
+  $query->leftJoin('field_data_field_dotgo_match_weight', 'w', "n.nid = w.entity_id");
   $query
     ->fields('n', array('nid'))
     ->condition('p.field_dotgo_match_parent_target_id', $nid)
     ->condition('p.entity_type', 'node')
-    ->orderBy('n.title')
+    ->orderBy('w.field_dotgo_match_weight_value')
     ->addTag('node_access');
 
   if (isset($bundle)) {
@@ -150,6 +151,9 @@ function dotgo_matches_get_match_form_element($entity){
   return $element;
 }
 
+/**
+ * dotgo_matches_get_form_types().
+ */
 function dotgo_matches_get_form_types(){
   return array(
     "date" => "Date",
@@ -158,6 +162,34 @@ function dotgo_matches_get_form_types(){
     "number" => "Number",
     "select" => "Select",
     "time" => "Time",
+  );
+}
+
+/**
+ * dotgo_matches_get_form_defaults().
+ */
+function dotgo_matches_get_form_defaults(){
+  return array(
+    '_none' => array(
+      'label' => '- Create new component -',
+      'type' => 'textfield',
+    ),
+    'full_name' => array(
+      'label' => 'Full Name',
+      'type' => 'textfield',
+    ),
+    'email_address' => array(
+      'label' => 'Email Address',
+      'type' => 'email',
+    ),
+    'phone_number' => array(
+      'label' => 'Phone Number',
+      'type' => 'phone',
+    ),
+    'dob' => array(
+      'label' => 'Date of Birth',
+      'type' => 'date',
+    ),
   );
 }
 
@@ -406,4 +438,55 @@ function dotgo_matches_form_submission_delete($node, $submission) {
 
 
   module_invoke_all('dotgo_matches_form_submission_delete', $node, $submission);
+}
+
+function dotgo_matches_load_simulator_message($node){
+  // We have a cached simulator message.
+  $cid = dotgo_matches_get_cache_id(DOTGO_CACHE_SIMULATOR_MESSAGE, $node->nid, FALSE, array($node->vid));
+
+  if(dotgo_matches_get_cache(DOTGO_CACHE_SIMULATOR_MESSAGE, $cid, $message)){
+    return $message;
+  } else {
+    $message = _dotgo_query_simulator($node->dotgo->query, user_password());
+  }
+
+  dotgo_matches_set_cache(DOTGO_CACHE_MATCH_STATE, $cid, $message);
+
+  return $message;
+}
+
+function dotgo_matches_load_user_query($node){
+  // We have a cached simulator message.
+  $cid = dotgo_matches_get_cache_id(DOTGO_CACHE_USER_QUERY, $node->nid, FALSE, array($node->vid));
+
+  $query = '';
+  if(dotgo_matches_get_cache(DOTGO_CACHE_USER_QUERY, $cid, $query)){
+    return $query;
+  } else {
+    $type = $node->field_dotgo_match_type[$node->language][0]['value'];
+    if($type == 'default'){
+      if(isset($node->field_dotgo_match_parent[$node->language][0]['target_id'])){
+        $count = preg_match_all("/\([1-9]\)/", $node->dotgo->simulator_message, $matches);
+        $children = dotgo_matches_get_by_parent($node->field_dotgo_match_parent[$node->language][0]['target_id']);
+        if($count == count($children)){
+          $query = $node->field_dotgo_match_weight[$node->language][0]['value'];
+        } else {
+          if(isset($matches[0])){
+            foreach($matches[0] as $match){
+              $number = trim($match, "()");
+              $c = preg_match_all("/\(".$number."\)\s".preg_quote($node->title)."/", $node->dotgo->simulator_message);
+              if($c){
+                $query = $number;
+              }
+            }
+          }
+        }
+      }
+    }
+    drupal_alter('dotgo_user_query', $query, $node);
+  }
+
+  dotgo_matches_set_cache(DOTGO_CACHE_USER_QUERY, $cid, $query);
+
+  return $query;
 }

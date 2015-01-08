@@ -21,5 +21,5 @@ function template_preprocess_views_dotgo_engine_style(&$vars) {
     $exposed_input = isset($view->exposed_raw_input) ? $view->exposed_raw_input : NULL;
   }
 
-  $vars["xml"] = _dotgo_message($message);
+  $vars["xml"] = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
 }

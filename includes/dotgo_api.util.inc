@@ -281,7 +281,7 @@ function _dotgo_tld_lookup($key) {
     'org' => '368674',
   );
 
-  return $tlds[$key];
+  return isset($tlds[$key]) ? $tlds[$key] : $tlds['com'];
 }
 
 /**
@@ -354,4 +354,21 @@ function _dotgo_follow_widget($query = array(), $options = array()) {
 
   return $output;
 
+}
+
+function _dotgo_query_simulator($query, $number = NULL){
+  $tld = _dotgo_tld();
+  $parameters = array(
+    'method' => 'dotgo.simulator',
+    'key' => 'xxx4y9dicywhmz9056gd8h8lq',
+    'query' => $query,
+    'shortcode' => _dotgo_tld_lookup($tld),
+    'format' => 'html',
+    'number' => 'api:'.$number,
+  );
+  $full_url = url('https://www.dotgo.com/api/', array('query' => $parameters));
+  $request = drupal_http_request($full_url);
+  if($request->code == 200){
+    return $request->data;
+  }
 }

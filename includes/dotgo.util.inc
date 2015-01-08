@@ -77,8 +77,34 @@ function template_preprocess_dotgo_default(&$vars){
     $node_view = node_view($node, $view_mode = 'dotgo', $node->language);
     $message = drupal_render($node_view);
     $message = _dotgo_filter_process($message);
-    $vars['message'] = _dotgo_message($message);
+    $vars['message'] = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
   } else {
-    $vars['message'] = _dotgo_message('No matching node.');
+    $message = 'No matching node.';
+    $vars['message'] = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
   }
+}
+
+/**
+ * Helper function to split up a returned dotgo message.
+ * @param $message
+ */
+function _dotgo_split_simulator_message($message){
+  $messages = array();
+  $split = preg_split("/(\([1-3]\/[1-3]\))/", $message, -1, PREG_SPLIT_NO_EMPTY);
+  $message_count = count($split) <= 3 ? count($split) : 3;
+  $count = 1;
+  foreach($split as $piece) {
+    $count_label = ($message_count > 1) ? '('.$count.'/'.$message_count.')' : '';
+    $messages[] = theme('html_tag', array(
+      'element' => array(
+        '#tag' => 'div',
+        '#attributes' => array(
+          'class' => 'dotgo-message',
+        ),
+        '#value' => $count_label.$piece,
+      ),
+    ));
+    $count++;
+  }
+  return $messages;
 }

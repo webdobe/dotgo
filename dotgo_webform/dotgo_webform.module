@@ -149,6 +149,7 @@ function template_preprocess_dotgo_webform_default(&$vars){
       $vars['message'] = _dotgo_input_session($form_key, $session_variables, $message, $href, $options);
     }
   } else {
-    $vars['message'] = _dotgo_message('No matching node.');
+    $message = 'No matching node.';
+    $vars['message'] = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
   }
 }

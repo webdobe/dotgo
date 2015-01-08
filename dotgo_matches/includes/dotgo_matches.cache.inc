@@ -9,6 +9,8 @@
  */
 define('DOTGO_CACHE_MATCH_STATE', 'dotgo_match_state');
 define('DOTGO_CACHE_MATCHES_BY_GROUP', 'dotgo_matches_by_group');
+define('DOTGO_CACHE_SIMULATOR_MESSAGE', 'dotgo_simulator_message');
+define('DOTGO_CACHE_USER_QUERY', 'dotgo_user_query');
 
 /**
  * Helper function to get a value from static or db cache

@@ -143,16 +143,17 @@ function dotgo_users($sys_argument) {
   $current_path = $_REQUEST['sys_path'];
   $email_address = $_REQUEST['email_address'];
   $account = dotgo_users_load($sys_user);
+  $options = array();
 
   if ($account && $sys_user) {
-    $msg = 'Hello ' . $account->name . '!';
-    $msg .= dotgo_menu_build(array('users'), $current_path, $account);
-    $output = _dotgo_message($msg);
+    $message = 'Hello ' . $account->name . '!';
+    $message .= dotgo_menu_build(array('users'), $current_path, $account);
+    $output = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
   }
   elseif ($sys_argument == 'clear') {
-    $msg = 'You have cleared your session.';
-    $msg .= dotgo_menu_build(array('users'), $current_path, $account);
-    $output = _dotgo_set_session(array('email_address' => NULL), $msg);
+    $message = 'You have cleared your session.';
+    $message .= dotgo_menu_build(array('users'), $current_path, $account);
+    $output = _dotgo_set_session(array('email_address' => NULL), $message);
   }
   elseif ($sys_argument == 'username') {
     $question = 'Please reply with a new Username or reply ' . _dotgo_make_anchor_query($dg) . ' to cancel.';
@@ -221,10 +222,10 @@ function dotgo_users_register($sys_argument) {
         //else create new drupal user account
         $account = dotgo_users_add($sys_user, $email_address);
       }
-      $msg = 'Welcome ' . $account->name . ', you have successfully created your user account!';
-      $msg .= dotgo_menu_build(array('users'), $current_path, $account);
+      $message = 'Welcome ' . $account->name . ', you have successfully created your user account!';
+      $message .= dotgo_menu_build(array('users'), $current_path, $account);
       //MUST $output with _dotgo_message or will break;
-      $output = _dotgo_message($msg);
+      $output = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
     }
     elseif ($directive == 'unregister') {
       $account = dotgo_users_load($sys_user);
@@ -234,14 +235,14 @@ function dotgo_users_register($sys_argument) {
         $update = dotgo_users_update('delete', $account->uid, $sys_user);
         _user_mail_notify('status_deleted', $account);
       }
-      $msg = 'We are sorry to see you go ' . $account->name . '! However, you have successfully removed your user account.';
-      $msg .= dotgo_menu_build(array('users'), $current_path);
+      $message = 'We are sorry to see you go ' . $account->name . '! However, you have successfully removed your user account.';
+      $message .= dotgo_menu_build(array('users'), $current_path);
       //MUST $output with _dotgo_message or will break;
-      $output = _dotgo_message($msg);
+      $output = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
     }
     else {
-      $msg = ' ';
-      $output = _dotgo_message($msg);
+      $message = ' ';
+      $output = theme('dotgo_message', array('message' => $message, 'format' => 'xml'));
     }
     //else anonymous user is attempting to register for first time.
   }
